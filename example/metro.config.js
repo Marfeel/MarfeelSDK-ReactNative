@@ -10,6 +10,9 @@ const config = {
       path.resolve(__dirname, 'node_modules'),
       path.resolve(sdkRoot, 'node_modules'),
     ],
+    blockList: [
+      new RegExp(path.resolve(sdkRoot, 'example', 'node_modules').replace(/[/\\]/g, '[/\\\\]') + '/.*'),
+    ],
   },
 };
 
