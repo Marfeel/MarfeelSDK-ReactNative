@@ -25,6 +25,8 @@ export default function App() {
   useEffect(() => {
     CompassTracking.initialize('1659', 105);
     CompassTracking.setConsent(true);
+    CompassTracking.setLandingPage('http://dev.marfeel.co/');
+    CompassTracking.trackScreen('home');
   }, []);
 
   return (

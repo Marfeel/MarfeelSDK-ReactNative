@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import {
   FlatList,
   Image,
@@ -9,7 +9,6 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { CompassTracking } from '@marfeel/react-native-sdk';
 import { articles } from '../data/articles';
 import type { Article } from '../data/articles';
 import type { HomeStackParamList } from '../navigation/types';
@@ -18,10 +17,6 @@ type NavigationProp = NativeStackNavigationProp<HomeStackParamList, 'ArticleList
 
 export function HomeScreen() {
   const navigation = useNavigation<NavigationProp>();
-
-  useEffect(() => {
-    CompassTracking.setLandingPage('http://dev.marfeel.co/');
-  }, []);
 
   function renderArticle({ item }: { item: Article }) {
     return (

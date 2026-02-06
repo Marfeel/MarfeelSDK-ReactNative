@@ -2,7 +2,6 @@ package com.marfeel.reactnative
 
 import android.view.View
 import android.widget.ScrollView
-import androidx.recyclerview.widget.RecyclerView
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactContextBaseJavaModule
@@ -11,14 +10,17 @@ import com.facebook.react.bridge.ReadableArray
 import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.module.annotations.ReactModule
 import com.facebook.react.uimanager.UIManagerModule
+import com.marfeel.compass.core.model.compass.ConversionOptions
+import com.marfeel.compass.core.model.compass.ConversionScope
+import com.marfeel.compass.core.model.compass.UserType
+import com.marfeel.compass.core.model.multimedia.Event
+import com.marfeel.compass.core.model.multimedia.MultimediaMetadata
+import com.marfeel.compass.core.model.multimedia.Type
 import com.marfeel.compass.tracker.CompassTracking
-import com.marfeel.compass.tracker.ConversionOptions
-import com.marfeel.compass.tracker.ConversionScope
-import com.marfeel.compass.tracker.UserType
 import com.marfeel.compass.tracker.multimedia.MultimediaTracking
-import com.marfeel.compass.tracker.multimedia.Event
-import com.marfeel.compass.tracker.multimedia.MultimediaMetadata
-import com.marfeel.compass.tracker.multimedia.Type
+import android.os.Handler
+import android.os.Looper
+import android.util.Log
 import org.json.JSONObject
 
 @ReactModule(name = MarfeelSdkModule.NAME)
@@ -27,9 +29,22 @@ class MarfeelSdkModule(private val reactContext: ReactApplicationContext) :
 
     companion object {
         const val NAME = "MarfeelSdk"
+        private const val TAG = "MarfeelSdk"
     }
 
     override fun getName(): String = NAME
+
+    private val mainHandler = Handler(Looper.getMainLooper())
+
+    private inline fun runOnMainThread(crossinline block: () -> Unit) {
+        mainHandler.post {
+            try {
+                block()
+            } catch (e: Exception) {
+                Log.e(TAG, "Error: ${e.message}", e)
+            }
+        }
+    }
 
     private fun findScrollView(tag: Int): ScrollView? {
         return try {
@@ -55,119 +70,137 @@ class MarfeelSdkModule(private val reactContext: ReactApplicationContext) :
 
     @ReactMethod
     fun initialize(accountId: String, pageTechnology: Int?) {
-        val context = reactContext.applicationContext
-        if (pageTechnology != null) {
-            CompassTracking.initialize(context, accountId, pageTechnology)
-        } else {
-            CompassTracking.initialize(context, accountId)
+        runOnMainThread {
+            val context = reactContext.applicationContext
+            if (pageTechnology != null) {
+                CompassTracking.initialize(context, accountId, pageTechnology)
+            } else {
+                CompassTracking.initialize(context, accountId)
+            }
         }
     }
 
     @ReactMethod
     fun trackNewPage(url: String, scrollViewTag: Int?, rs: String?) {
-        val scrollView = scrollViewTag?.let { findScrollView(it) }
-        if (scrollView != null) {
-            CompassTracking.getInstance().trackNewPage(url, scrollView, rs)
-        } else {
-            CompassTracking.getInstance().trackNewPage(url, rs)
+        runOnMainThread {
+            val scrollView = scrollViewTag?.let { findScrollView(it) }
+            if (scrollView != null) {
+                CompassTracking.getInstance().trackNewPage(url, scrollView, rs)
+            } else {
+                CompassTracking.getInstance().trackNewPage(url, rs)
+            }
         }
     }
 
     @ReactMethod
     fun trackScreen(screen: String, scrollViewTag: Int?, rs: String?) {
-        val scrollView = scrollViewTag?.let { findScrollView(it) }
-        if (scrollView != null) {
-            CompassTracking.getInstance().trackScreen(screen, scrollView, rs)
-        } else {
-            CompassTracking.getInstance().trackScreen(screen, rs)
+        runOnMainThread {
+            val scrollView = scrollViewTag?.let { findScrollView(it) }
+            if (scrollView != null) {
+                CompassTracking.getInstance().trackScreen(screen, scrollView, rs)
+            } else {
+                CompassTracking.getInstance().trackScreen(screen, rs)
+            }
         }
     }
 
     @ReactMethod
     fun stopTracking() {
-        CompassTracking.getInstance().stopTracking()
+        runOnMainThread { CompassTracking.getInstance().stopTracking() }
     }
 
     @ReactMethod
     fun setLandingPage(landingPage: String) {
-        CompassTracking.getInstance().setLandingPage(landingPage)
+        runOnMainThread { CompassTracking.getInstance().setLandingPage(landingPage) }
     }
 
     @ReactMethod
     fun setSiteUserId(userId: String) {
-        CompassTracking.getInstance().setSiteUserId(userId)
+        runOnMainThread { CompassTracking.getInstance().setSiteUserId(userId) }
     }
 
     @ReactMethod
     fun getUserId(promise: Promise) {
-        try {
-            val userId = CompassTracking.getInstance().getUserId()
-            promise.resolve(userId)
-        } catch (e: Exception) {
-            promise.reject("ERROR", e.message)
+        mainHandler.post {
+            try {
+                val userId = CompassTracking.getInstance().getUserId()
+                promise.resolve(userId)
+            } catch (e: Exception) {
+                promise.reject("ERROR", e.message)
+            }
         }
     }
 
     @ReactMethod
     fun setUserType(userType: Int) {
-        val type = when (userType) {
-            1 -> UserType.Anonymous
-            2 -> UserType.Logged
-            3 -> UserType.Paid
-            else -> UserType.Custom(userType)
+        runOnMainThread {
+            val type = when (userType) {
+                1 -> UserType.Anonymous
+                2 -> UserType.Logged
+                3 -> UserType.Paid
+                else -> UserType.Custom(userType)
+            }
+            CompassTracking.getInstance().setUserType(type)
         }
-        CompassTracking.getInstance().setUserType(type)
     }
 
     @ReactMethod
     fun getRFV(promise: Promise) {
-        CompassTracking.getInstance().getRFV { rfv ->
-            promise.resolve(rfv)
+        mainHandler.post {
+            try {
+                CompassTracking.getInstance().getRFV { rfv ->
+                    promise.resolve(rfv)
+                }
+            } catch (e: Exception) {
+                promise.reject("ERROR", e.message)
+            }
         }
     }
 
     @ReactMethod
     fun setPageVar(name: String, value: String) {
-        CompassTracking.getInstance().setPageVar(name, value)
+        runOnMainThread { CompassTracking.getInstance().setPageVar(name, value) }
     }
 
     @ReactMethod
     fun setPageMetric(name: String, value: Int) {
-        CompassTracking.getInstance().setPageMetric(name, value)
+        runOnMainThread { CompassTracking.getInstance().setPageMetric(name, value) }
     }
 
     @ReactMethod
     fun setSessionVar(name: String, value: String) {
-        CompassTracking.getInstance().setSessionVar(name, value)
+        runOnMainThread { CompassTracking.getInstance().setSessionVar(name, value) }
     }
 
     @ReactMethod
     fun setUserVar(name: String, value: String) {
-        CompassTracking.getInstance().setUserVar(name, value)
+        runOnMainThread { CompassTracking.getInstance().setUserVar(name, value) }
     }
 
     @ReactMethod
     fun addUserSegment(segment: String) {
-        CompassTracking.getInstance().addUserSegment(segment)
+        runOnMainThread { CompassTracking.getInstance().addUserSegment(segment) }
     }
 
     @ReactMethod
     fun setUserSegments(segments: ReadableArray) {
-        val list = mutableListOf<String>()
-        for (i in 0 until segments.size()) {
-            segments.getString(i)?.let { list.add(it) }
+        runOnMainThread {
+            val list = mutableListOf<String>()
+            for (i in 0 until segments.size()) {
+                segments.getString(i)?.let { list.add(it) }
+            }
+            CompassTracking.getInstance().setUserSegments(list)
         }
-        CompassTracking.getInstance().setUserSegments(list)
     }
 
     @ReactMethod
     fun removeUserSegment(segment: String) {
-        CompassTracking.getInstance().removeUserSegment(segment)
+        runOnMainThread { CompassTracking.getInstance().removeUserSegment(segment) }
     }
 
     @ReactMethod
     fun clearUserSegments() {
-        CompassTracking.getInstance().clearUserSegments()
+        runOnMainThread { CompassTracking.getInstance().clearUserSegments() }
     }
 
     @ReactMethod
@@ -179,42 +212,44 @@ class MarfeelSdkModule(private val reactContext: ReactApplicationContext) :
         meta: ReadableMap?,
         scope: String?
     ) {
-        val metaMap = meta?.let {
-            val map = mutableMapOf<String, String>()
-            val iterator = it.keySetIterator()
-            while (iterator.hasNextKey()) {
-                val key = iterator.nextKey()
-                it.getString(key)?.let { v -> map[key] = v }
+        runOnMainThread {
+            val metaMap = meta?.let {
+                val map = mutableMapOf<String, String>()
+                val iterator = it.keySetIterator()
+                while (iterator.hasNextKey()) {
+                    val key = iterator.nextKey()
+                    it.getString(key)?.let { v -> map[key] = v }
+                }
+                map
             }
-            map
-        }
 
-        val conversionScope = when (scope) {
-            "user" -> ConversionScope.User
-            "session" -> ConversionScope.Session
-            "page" -> ConversionScope.Page
-            else -> null
-        }
+            val conversionScope = when (scope) {
+                "user" -> ConversionScope.User
+                "session" -> ConversionScope.Session
+                "page" -> ConversionScope.Page
+                else -> null
+            }
 
-        if (initiator == null && id == null && value == null && metaMap == null && conversionScope == null) {
-            CompassTracking.getInstance().trackConversion(conversion)
-        } else {
-            CompassTracking.getInstance().trackConversion(
-                conversion,
-                ConversionOptions(
-                    initiator = initiator,
-                    id = id,
-                    value = value,
-                    meta = metaMap,
-                    scope = conversionScope
+            if (initiator == null && id == null && value == null && metaMap == null && conversionScope == null) {
+                CompassTracking.getInstance().trackConversion(conversion)
+            } else {
+                CompassTracking.getInstance().trackConversion(
+                    conversion,
+                    ConversionOptions(
+                        initiator = initiator,
+                        id = id,
+                        value = value,
+                        meta = metaMap,
+                        scope = conversionScope
+                    )
                 )
-            )
+            }
         }
     }
 
     @ReactMethod
     fun setConsent(hasConsent: Boolean) {
-        CompassTracking.getInstance().setUserConsent(hasConsent)
+        runOnMainThread { CompassTracking.getInstance().setUserConsent(hasConsent) }
     }
 
     @ReactMethod
@@ -225,19 +260,21 @@ class MarfeelSdkModule(private val reactContext: ReactApplicationContext) :
         type: String,
         metadataJson: String
     ) {
-        val mediaType = if (type == "audio") Type.AUDIO else Type.VIDEO
-        val json = JSONObject(metadataJson)
-        val metadata = MultimediaMetadata(
-            isLive = if (json.has("isLive")) json.getBoolean("isLive") else false,
-            title = if (json.has("title")) json.getString("title") else null,
-            description = if (json.has("description")) json.getString("description") else null,
-            url = if (json.has("url")) json.getString("url") else null,
-            thumbnail = if (json.has("thumbnail")) json.getString("thumbnail") else null,
-            authors = if (json.has("authors")) json.getString("authors") else null,
-            publishTime = if (json.has("publishTime")) json.getLong("publishTime") else null,
-            duration = if (json.has("duration")) json.getInt("duration") else null
-        )
-        MultimediaTracking.getInstance().initializeItem(id, provider, providerId, mediaType, metadata)
+        runOnMainThread {
+            val mediaType = if (type == "audio") Type.AUDIO else Type.VIDEO
+            val json = JSONObject(metadataJson)
+            val metadata = MultimediaMetadata(
+                isLive = if (json.has("isLive")) json.getBoolean("isLive") else false,
+                title = if (json.has("title")) json.getString("title") else null,
+                description = if (json.has("description")) json.getString("description") else null,
+                url = if (json.has("url")) json.getString("url") else null,
+                thumbnail = if (json.has("thumbnail")) json.getString("thumbnail") else null,
+                authors = if (json.has("authors")) json.getString("authors") else null,
+                publishTime = if (json.has("publishTime")) json.getLong("publishTime") else null,
+                duration = if (json.has("duration")) json.getInt("duration") else null
+            )
+            MultimediaTracking.getInstance().initializeItem(id, provider, providerId, mediaType, metadata)
+        }
     }
 
     @ReactMethod
@@ -256,6 +293,6 @@ class MarfeelSdkModule(private val reactContext: ReactApplicationContext) :
             "leaveViewport" -> Event.LEAVE_VIEWPORT
             else -> return
         }
-        MultimediaTracking.getInstance().registerEvent(id, mediaEvent, eventTime)
+        runOnMainThread { MultimediaTracking.getInstance().registerEvent(id, mediaEvent, eventTime) }
     }
 }

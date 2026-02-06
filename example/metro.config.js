@@ -10,8 +10,13 @@ const config = {
       path.resolve(__dirname, 'node_modules'),
       path.resolve(sdkRoot, 'node_modules'),
     ],
+    extraNodeModules: {
+      '@marfeel/react-native-sdk': sdkRoot,
+    },
     blockList: [
-      new RegExp(path.resolve(sdkRoot, 'example', 'node_modules').replace(/[/\\]/g, '[/\\\\]') + '/.*'),
+      new RegExp(path.resolve(sdkRoot, 'node_modules', 'react-native').replace(/[/\\]/g, '[/\\\\]') + '/.*'),
+      new RegExp(path.resolve(sdkRoot, 'node_modules', 'react').replace(/[/\\]/g, '[/\\\\]') + '/.*'),
+      new RegExp(path.resolve(sdkRoot, '.worktrees').replace(/[/\\]/g, '[/\\\\]') + '/.*'),
     ],
   },
 };
