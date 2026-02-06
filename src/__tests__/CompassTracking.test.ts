@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { NativeModules } from 'react-native';
 import { CompassTracking } from '../CompassTracking';
 import { UserType, ConversionScope } from '../types';
@@ -6,7 +7,7 @@ const mockNativeModule = NativeModules.MarfeelSdk;
 
 describe('CompassTracking', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe('initialize', () => {
