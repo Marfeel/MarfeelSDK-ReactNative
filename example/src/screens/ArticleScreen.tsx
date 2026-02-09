@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, TouchableOpacity, StyleSheet, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import {
   CompassTracking,
@@ -32,7 +32,7 @@ export function ArticleScreen({ route }: Props) {
         <Text style={styles.body}>{article.body}</Text>
 
         <View style={styles.actions}>
-          <Pressable
+          <TouchableOpacity
             style={styles.button}
             onPress={() =>
               CompassTracking.trackConversion('article_read', {
@@ -41,18 +41,18 @@ export function ArticleScreen({ route }: Props) {
             }
           >
             <Text style={styles.buttonText}>Track Conversion</Text>
-          </Pressable>
+          </TouchableOpacity>
 
-          <Pressable
+          <TouchableOpacity
             style={styles.button}
             onPress={() =>
               CompassTracking.addUserSegment(`${article.category}_reader`)
             }
           >
             <Text style={styles.buttonText}>Add Segment</Text>
-          </Pressable>
+          </TouchableOpacity>
 
-          <Pressable
+          <TouchableOpacity
             style={styles.button}
             onPress={() =>
               CompassTracking.trackConversion('conv_with_meta', {
@@ -65,7 +65,7 @@ export function ArticleScreen({ route }: Props) {
             }
           >
             <Text style={styles.buttonText}>Conversion with Meta</Text>
-          </Pressable>
+          </TouchableOpacity>
         </View>
       </View>
     </CompassScrollView>

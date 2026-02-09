@@ -1,5 +1,5 @@
 import Foundation
-import CompassSDK
+import MarfeelSDK_iOS
 import React
 
 @objc(MarfeelSdk)
@@ -154,7 +154,7 @@ class MarfeelSdk: NSObject {
     }
 
     @objc func initializeMultimediaItem(_ id: String, provider: String, providerId: String, type: String, metadata: String) {
-        let mediaType: CompassSDK.`Type` = type == "audio" ? .AUDIO : .VIDEO
+        let mediaType: MarfeelSDK_iOS.`Type` = type == "audio" ? .AUDIO : .VIDEO
 
         var multimediaMetadata = MultimediaMetadata()
         if let data = metadata.data(using: .utf8),
