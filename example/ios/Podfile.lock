@@ -11,7 +11,7 @@ PODS:
   - marfeel-react-native-sdk (0.1.0):
     - MarfeelSDK-iOS (~> 2.18)
     - React-Core
-  - MarfeelSDK-iOS (2.18.5)
+  - MarfeelSDK-iOS (2.18.7)
   - RCT-Folly (2024.11.18.00):
     - boost
     - DoubleConversion
@@ -2863,7 +2863,7 @@ SPEC CHECKSUMS:
   glog: 5683914934d5b6e4240e497e0f4a3b42d1854183
   hermes-engine: 30485dc21629a2570bca146df87ab85d3c5526e2
   marfeel-react-native-sdk: ddaac48185fd9c887ed17aa005301a9f996aa286
-  MarfeelSDK-iOS: 5585c6f4f386e6f8a6d5ba1676dbe456fc3c7e3c
+  MarfeelSDK-iOS: 8001391308619de1bff774b75c1ca2cc533aff4c
   RCT-Folly: 59ec0ac1f2f39672a0c6e6cecdd39383b764646f
   RCTDeprecation: a41bbdd9af30bf2e5715796b313e44ec43eefff1
   RCTRequired: 7be34aabb0b77c3cefe644528df0fa0afad4e4d0

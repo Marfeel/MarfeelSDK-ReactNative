@@ -8,8 +8,9 @@ const LINKING_ERROR =
 
 export interface NativeMarfeelSdkType {
   initialize(accountId: string, pageTechnology: number | null): void;
-  trackNewPage(url: string, scrollViewTag: number | null, rs: string | null): void;
-  trackScreen(screen: string, scrollViewTag: number | null, rs: string | null): void;
+  trackNewPage(url: string, rs: string | null): void;
+  trackScreen(screen: string, rs: string | null): void;
+  updateScrollPercentage(percentage: number): void;
   stopTracking(): void;
   setLandingPage(landingPage: string): void;
   setSiteUserId(userId: string): void;

@@ -62,6 +62,5 @@ export interface RFV {
 }
 
 export interface TrackingOptions {
-  scrollViewTag?: number;
   rs?: string;
 }

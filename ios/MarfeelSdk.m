@@ -3,8 +3,9 @@
 @interface RCT_EXTERN_MODULE(MarfeelSdk, NSObject)
 
 RCT_EXTERN_METHOD(initialize:(NSString *)accountId pageTechnology:(nonnull NSNumber *)pageTechnology)
-RCT_EXTERN_METHOD(trackNewPage:(NSString *)url scrollViewTag:(nonnull NSNumber *)scrollViewTag rs:(NSString *)rs)
-RCT_EXTERN_METHOD(trackScreen:(NSString *)screen scrollViewTag:(nonnull NSNumber *)scrollViewTag rs:(NSString *)rs)
+RCT_EXTERN_METHOD(trackNewPage:(NSString *)url rs:(NSString *)rs)
+RCT_EXTERN_METHOD(trackScreen:(NSString *)screen rs:(NSString *)rs)
+RCT_EXTERN_METHOD(updateScrollPercentage:(float)percentage)
 RCT_EXTERN_METHOD(stopTracking)
 RCT_EXTERN_METHOD(setLandingPage:(NSString *)landingPage)
 RCT_EXTERN_METHOD(setSiteUserId:(NSString *)userId)

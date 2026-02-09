@@ -1,10 +1,6 @@
 export { CompassTracking } from './CompassTracking';
 export { MultimediaTracking } from './MultimediaTracking';
-export {
-  CompassScrollView,
-  getActiveScrollViewTag,
-  clearActiveScrollViewTag,
-} from './components/CompassScrollView';
+export { CompassScrollView } from './components/CompassScrollView';
 export {
   UserType,
   ConversionScope,

@@ -1,18 +1,9 @@
-import type { RefObject } from 'react';
-import type { ScrollView } from 'react-native';
-import { findNodeHandle } from 'react-native';
 import { NativeMarfeelSdk } from './NativeMarfeelSdk';
 import type {
   ConversionOptions,
   RFV,
-  TrackingOptions,
   UserTypeValue,
 } from './types';
-
-function getScrollViewTag(ref?: RefObject<ScrollView>): number | null {
-  if (!ref?.current) return null;
-  return findNodeHandle(ref.current);
-}
 
 function getUserTypeNumericValue(userType: UserTypeValue): number {
   if (typeof userType === 'object' && 'custom' in userType) {
@@ -26,24 +17,16 @@ export const CompassTracking = {
     NativeMarfeelSdk.initialize(accountId, pageTechnology ?? null);
   },
 
-  trackNewPage(
-    url: string,
-    options?: TrackingOptions & { scrollViewRef?: RefObject<ScrollView> }
-  ): void {
-    const scrollViewTag = options?.scrollViewRef
-      ? getScrollViewTag(options.scrollViewRef)
-      : options?.scrollViewTag ?? null;
-    NativeMarfeelSdk.trackNewPage(url, scrollViewTag, options?.rs ?? null);
+  trackNewPage(url: string, options?: { rs?: string }): void {
+    NativeMarfeelSdk.trackNewPage(url, options?.rs ?? null);
   },
 
-  trackScreen(
-    screen: string,
-    options?: TrackingOptions & { scrollViewRef?: RefObject<ScrollView> }
-  ): void {
-    const scrollViewTag = options?.scrollViewRef
-      ? getScrollViewTag(options.scrollViewRef)
-      : options?.scrollViewTag ?? null;
-    NativeMarfeelSdk.trackScreen(screen, scrollViewTag, options?.rs ?? null);
+  trackScreen(screen: string, options?: { rs?: string }): void {
+    NativeMarfeelSdk.trackScreen(screen, options?.rs ?? null);
+  },
+
+  updateScrollPercentage(percentage: number): void {
+    NativeMarfeelSdk.updateScrollPercentage(percentage);
   },
 
   stopTracking(): void {

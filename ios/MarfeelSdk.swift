@@ -5,26 +5,6 @@ import React
 @objc(MarfeelSdk)
 class MarfeelSdk: NSObject {
 
-    private func findScrollView(tag: NSNumber?) -> UIScrollView? {
-        guard let tag = tag, tag.intValue > 0 else { return nil }
-        guard let bridge = RCTBridge.current() else { return nil }
-        guard let uiManager = bridge.module(forName: "UIManager") as? RCTUIManager else { return nil }
-        guard let view = uiManager.view(forReactTag: tag) else { return nil }
-        return findScrollViewInHierarchy(view: view)
-    }
-
-    private func findScrollViewInHierarchy(view: UIView) -> UIScrollView? {
-        if let scrollView = view as? UIScrollView {
-            return scrollView
-        }
-        for subview in view.subviews {
-            if let found = findScrollViewInHierarchy(view: subview) {
-                return found
-            }
-        }
-        return nil
-    }
-
     @objc func initialize(_ accountId: String, pageTechnology: NSNumber?) {
         let accountIdInt = Int(accountId) ?? 0
         if let tech = pageTechnology?.intValue, tech > 0 {
@@ -34,15 +14,17 @@ class MarfeelSdk: NSObject {
         }
     }
 
-    @objc func trackNewPage(_ url: String, scrollViewTag: NSNumber?, rs: String?) {
+    @objc func trackNewPage(_ url: String, rs: String?) {
         guard let pageUrl = URL(string: url) else { return }
-        let scrollView = findScrollView(tag: scrollViewTag)
-        CompassTracker.shared.trackNewPage(url: pageUrl, scrollView: scrollView, rs: rs)
+        CompassTracker.shared.trackNewPage(url: pageUrl, rs: rs)
     }
 
-    @objc func trackScreen(_ screen: String, scrollViewTag: NSNumber?, rs: String?) {
-        let scrollView = findScrollView(tag: scrollViewTag)
-        CompassTracker.shared.trackScreen(name: screen, scrollView: scrollView, rs: rs)
+    @objc func trackScreen(_ screen: String, rs: String?) {
+        CompassTracker.shared.trackScreen(screen, rs: rs)
+    }
+
+    @objc func updateScrollPercentage(_ percentage: Float) {
+        CompassTracker.shared.updateScrollPercentage(percentage)
     }
 
     @objc func stopTracking() {

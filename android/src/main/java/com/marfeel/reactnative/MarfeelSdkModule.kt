@@ -1,7 +1,5 @@
 package com.marfeel.reactnative
 
-import android.view.View
-import android.widget.ScrollView
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactContextBaseJavaModule
@@ -9,7 +7,6 @@ import com.facebook.react.bridge.ReactMethod
 import com.facebook.react.bridge.ReadableArray
 import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.module.annotations.ReactModule
-import com.facebook.react.uimanager.UIManagerModule
 import com.marfeel.compass.core.model.compass.ConversionOptions
 import com.marfeel.compass.core.model.compass.ConversionScope
 import com.marfeel.compass.core.model.compass.UserType
@@ -46,28 +43,6 @@ class MarfeelSdkModule(private val reactContext: ReactApplicationContext) :
         }
     }
 
-    private fun findScrollView(tag: Int): ScrollView? {
-        return try {
-            val uiManager = reactContext.getNativeModule(UIManagerModule::class.java)
-            val view = uiManager?.resolveView(tag)
-            findScrollViewInHierarchy(view)
-        } catch (e: Exception) {
-            null
-        }
-    }
-
-    private fun findScrollViewInHierarchy(view: View?): ScrollView? {
-        if (view == null) return null
-        if (view is ScrollView) return view
-        if (view is android.view.ViewGroup) {
-            for (i in 0 until view.childCount) {
-                val found = findScrollViewInHierarchy(view.getChildAt(i))
-                if (found != null) return found
-            }
-        }
-        return null
-    }
-
     @ReactMethod
     fun initialize(accountId: String, pageTechnology: Int?) {
         runOnMainThread {
@@ -81,26 +56,23 @@ class MarfeelSdkModule(private val reactContext: ReactApplicationContext) :
     }
 
     @ReactMethod
-    fun trackNewPage(url: String, scrollViewTag: Int?, rs: String?) {
+    fun trackNewPage(url: String, rs: String?) {
         runOnMainThread {
-            val scrollView = scrollViewTag?.let { findScrollView(it) }
-            if (scrollView != null) {
-                CompassTracking.getInstance().trackNewPage(url, scrollView, rs)
-            } else {
-                CompassTracking.getInstance().trackNewPage(url, rs)
-            }
+            CompassTracking.getInstance().trackNewPage(url, rs)
         }
     }
 
     @ReactMethod
-    fun trackScreen(screen: String, scrollViewTag: Int?, rs: String?) {
+    fun trackScreen(screen: String, rs: String?) {
         runOnMainThread {
-            val scrollView = scrollViewTag?.let { findScrollView(it) }
-            if (scrollView != null) {
-                CompassTracking.getInstance().trackScreen(screen, scrollView, rs)
-            } else {
-                CompassTracking.getInstance().trackScreen(screen, rs)
-            }
+            CompassTracking.getInstance().trackScreen(screen, rs)
+        }
+    }
+
+    @ReactMethod
+    fun updateScrollPercentage(percentage: Int) {
+        runOnMainThread {
+            CompassTracking.getInstance().updateScrollPercentage(percentage)
         }
     }
 

@@ -1,35 +1,27 @@
 import React, {
   forwardRef,
-  useEffect,
+  useCallback,
   useImperativeHandle,
   useRef,
 } from 'react';
 import {
   FlatList,
-  findNodeHandle,
   ScrollView,
   SectionList,
 } from 'react-native';
 import type {
   FlatListProps,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
   ScrollViewProps,
   SectionListProps,
 } from 'react-native';
+import { NativeMarfeelSdk } from '../NativeMarfeelSdk';
 
 type ScrollableComponent =
   | typeof ScrollView
   | typeof FlatList
   | typeof SectionList;
-
-let activeScrollViewTag: number | null = null;
-
-export function getActiveScrollViewTag(): number | null {
-  return activeScrollViewTag;
-}
-
-export function clearActiveScrollViewTag(): void {
-  activeScrollViewTag = null;
-}
 
 type CompassScrollViewProps<T extends ScrollableComponent = typeof ScrollView> =
   T extends typeof FlatList
@@ -46,22 +38,35 @@ const CompassScrollViewInner = forwardRef<
   ScrollView | FlatList | SectionList,
   BaseProps
 >(function CompassScrollViewInner(props, ref) {
-  const { as: Component = ScrollView, ...rest } = props;
+  const { as: Component = ScrollView, onScroll: userOnScroll, ...rest } = props;
   const innerRef = useRef<ScrollView | FlatList | SectionList>(null);
 
   useImperativeHandle(ref, () => innerRef.current as ScrollView);
 
-  useEffect(() => {
-    if (innerRef.current) {
-      activeScrollViewTag = findNodeHandle(innerRef.current);
-    }
-    return () => {
-      activeScrollViewTag = null;
-    };
-  }, []);
+  const handleScroll = useCallback(
+    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+      const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
+      const scrollableHeight = contentSize.height - layoutMeasurement.height;
+      if (scrollableHeight > 0) {
+        const percentage = Math.round((contentOffset.y / scrollableHeight) * 100);
+        NativeMarfeelSdk.updateScrollPercentage(percentage);
+      }
+      if (userOnScroll) {
+        (userOnScroll as (event: NativeSyntheticEvent<NativeScrollEvent>) => void)(event);
+      }
+    },
+    [userOnScroll]
+  );
 
   const ScrollableElement = Component as typeof ScrollView;
-  return <ScrollableElement ref={innerRef as React.Ref<ScrollView>} {...(rest as ScrollViewProps)} />;
+  return (
+    <ScrollableElement
+      ref={innerRef as React.Ref<ScrollView>}
+      scrollEventThrottle={16}
+      onScroll={handleScroll}
+      {...(rest as ScrollViewProps)}
+    />
+  );
 });
 
 export const CompassScrollView = CompassScrollViewInner as <
