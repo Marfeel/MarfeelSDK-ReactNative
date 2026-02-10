@@ -129,10 +129,6 @@ CompassTracking.setConsent(true);  // User gave consent
 CompassTracking.setConsent(false); // User revoked consent
 ```
 
-## API Reference
-
-See the [design document](docs/plans/2026-02-05-react-native-bridge-design.md) for full API details.
-
 ## License
 
 MIT
