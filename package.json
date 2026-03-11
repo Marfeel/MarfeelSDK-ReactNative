@@ -10,7 +10,8 @@
   "files": [
     "src",
     "lib",
-    "android",
+    "android/src",
+    "android/build.gradle",
     "ios",
     "marfeel-react-native-sdk.podspec",
     "!**/__tests__",
