@@ -27,7 +27,6 @@ describe('CompassTracking', () => {
       CompassTracking.trackNewPage('https://example.com');
       expect(mockNativeModule.trackNewPage).toHaveBeenCalledWith(
         'https://example.com',
-        null,
         null
       );
     });
@@ -36,7 +35,6 @@ describe('CompassTracking', () => {
       CompassTracking.trackNewPage('https://example.com', { rs: 'homepage' });
       expect(mockNativeModule.trackNewPage).toHaveBeenCalledWith(
         'https://example.com',
-        null,
         'homepage'
       );
     });
