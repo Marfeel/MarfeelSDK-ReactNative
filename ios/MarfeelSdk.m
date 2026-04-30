@@ -25,6 +25,39 @@ RCT_EXTERN_METHOD(setConsent:(BOOL)hasConsent)
 RCT_EXTERN_METHOD(initializeMultimediaItem:(NSString *)id provider:(NSString *)provider providerId:(NSString *)providerId type:(NSString *)type metadata:(NSString *)metadata)
 RCT_EXTERN_METHOD(registerMultimediaEvent:(NSString *)id event:(NSString *)event eventTime:(int)eventTime)
 
+RCT_EXTERN_METHOD(recirculationTrackEligible:(NSString *)name links:(NSArray *)links)
+RCT_EXTERN_METHOD(recirculationTrackImpression:(NSString *)name links:(NSArray *)links)
+RCT_EXTERN_METHOD(recirculationTrackClick:(NSString *)name link:(NSDictionary *)link)
+
+RCT_EXTERN_METHOD(experiencesAddTargeting:(NSString *)key value:(NSString *)value)
+RCT_EXTERN_METHOD(experiencesFetch:(NSString *)filterByType
+                  filterByFamily:(NSString *)filterByFamily
+                  resolve:(BOOL)resolve
+                  url:(NSString *)url
+                  resolver:(RCTPromiseResolveBlock)resolver
+                  rejecter:(RCTPromiseRejectBlock)rejecter)
+RCT_EXTERN_METHOD(experiencesResolveContent:(NSString *)experienceId
+                  resolver:(RCTPromiseResolveBlock)resolver
+                  rejecter:(RCTPromiseRejectBlock)rejecter)
+RCT_EXTERN_METHOD(experiencesTrackEligible:(NSString *)experienceId links:(NSArray *)links)
+RCT_EXTERN_METHOD(experiencesTrackImpression:(NSString *)experienceId links:(NSArray *)links)
+RCT_EXTERN_METHOD(experiencesTrackClick:(NSString *)experienceId link:(NSDictionary *)link)
+RCT_EXTERN_METHOD(experiencesTrackClose:(NSString *)experienceId)
+
+RCT_EXTERN_METHOD(experiencesClearFrequencyCaps)
+RCT_EXTERN_METHOD(experiencesGetFrequencyCapCounts:(NSString *)experienceId
+                  resolver:(RCTPromiseResolveBlock)resolver
+                  rejecter:(RCTPromiseRejectBlock)rejecter)
+RCT_EXTERN_METHOD(experiencesGetFrequencyCapConfig:(RCTPromiseResolveBlock)resolver
+                  rejecter:(RCTPromiseRejectBlock)rejecter)
+RCT_EXTERN_METHOD(experiencesClearReadEditorials)
+RCT_EXTERN_METHOD(experiencesGetReadEditorials:(RCTPromiseResolveBlock)resolver
+                  rejecter:(RCTPromiseRejectBlock)rejecter)
+RCT_EXTERN_METHOD(experiencesGetExperimentAssignments:(RCTPromiseResolveBlock)resolver
+                  rejecter:(RCTPromiseRejectBlock)rejecter)
+RCT_EXTERN_METHOD(experiencesSetExperimentAssignment:(NSString *)groupId variantId:(NSString *)variantId)
+RCT_EXTERN_METHOD(experiencesClearExperimentAssignments)
+
 + (BOOL)requiresMainQueueSetup
 {
   return YES;

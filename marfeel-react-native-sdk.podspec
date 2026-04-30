@@ -16,5 +16,5 @@ Pod::Spec.new do |s|
   s.source_files = "ios/**/*.{h,m,mm,swift}"
 
   s.dependency "React-Core"
-  s.dependency "MarfeelSDK-iOS", "~> 2.18"
+  s.dependency "MarfeelSDK-iOS", "~> 2.18.9"
 end

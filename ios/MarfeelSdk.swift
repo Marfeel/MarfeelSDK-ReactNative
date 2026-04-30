@@ -5,6 +5,12 @@ import React
 @objc(MarfeelSdk)
 class MarfeelSdk: NSObject {
 
+    private var experienceCache: [String: Experience] = [:]
+    private let cacheQueue = DispatchQueue(
+        label: "com.marfeel.rn.expcache",
+        attributes: .concurrent
+    )
+
     @objc func initialize(_ accountId: String, pageTechnology: NSNumber?) {
         let accountIdInt = Int(accountId) ?? 0
         if let tech = pageTechnology?.intValue, tech > 0 {
@@ -29,6 +35,9 @@ class MarfeelSdk: NSObject {
 
     @objc func stopTracking() {
         CompassTracker.shared.stopTracking()
+        cacheQueue.async(flags: .barrier) { [weak self] in
+            self?.experienceCache.removeAll()
+        }
     }
 
     @objc func setLandingPage(_ landingPage: String) {
@@ -180,5 +189,246 @@ class MarfeelSdk: NSObject {
         }
 
         CompassTrackerMultimedia.shared.registerEvent(id: id, event: mediaEvent, eventTime: eventTime)
+    }
+
+    // MARK: - Recirculation
+
+    @objc func recirculationTrackEligible(_ name: String, links: NSArray) {
+        Recirculation.shared.trackEligible(name: name, links: Self.toLinks(links))
+    }
+
+    @objc func recirculationTrackImpression(_ name: String, links: NSArray) {
+        Recirculation.shared.trackImpression(name: name, links: Self.toLinks(links))
+    }
+
+    @objc func recirculationTrackClick(_ name: String, link: NSDictionary) {
+        Recirculation.shared.trackClick(name: name, link: Self.toLink(link))
+    }
+
+    // MARK: - Experiences
+
+    @objc func experiencesAddTargeting(_ key: String, value: String) {
+        Experiences.shared.addTargeting(key: key, value: value)
+    }
+
+    @objc func experiencesFetch(
+        _ filterByType: String?,
+        filterByFamily: String?,
+        resolve: Bool,
+        url: String?,
+        resolver: @escaping RCTPromiseResolveBlock,
+        rejecter: @escaping RCTPromiseRejectBlock
+    ) {
+        let typeFilter = filterByType.flatMap { ExperienceType(rawValue: $0) }
+        let familyFilter: ExperienceFamily? = filterByFamily.flatMap { Self.familyFromServerKey[$0] }
+
+        Experiences.shared.fetchExperiences(
+            filterByType: typeFilter,
+            filterByFamily: familyFilter,
+            resolve: resolve,
+            url: url
+        ) { [weak self] experiences in
+            self?.cache(experiences)
+            resolver(Self.serialize(experiences))
+        }
+    }
+
+    @objc func experiencesResolveContent(
+        _ experienceId: String,
+        resolver: @escaping RCTPromiseResolveBlock,
+        rejecter: @escaping RCTPromiseRejectBlock
+    ) {
+        guard let exp = cached(experienceId) else {
+            resolver(NSNull())
+            return
+        }
+        exp.resolve { content in
+            resolver(content ?? NSNull())
+        }
+    }
+
+    @objc func experiencesTrackEligible(_ experienceId: String, links: NSArray) {
+        guard let exp = cached(experienceId) else { return }
+        Experiences.shared.trackEligible(experience: exp, links: Self.toLinks(links))
+    }
+
+    @objc func experiencesTrackImpression(_ experienceId: String, links: NSArray) {
+        guard let exp = cached(experienceId) else { return }
+        Experiences.shared.trackImpression(experience: exp, links: Self.toLinks(links))
+    }
+
+    @objc func experiencesTrackClick(_ experienceId: String, link: NSDictionary) {
+        guard let exp = cached(experienceId) else { return }
+        Experiences.shared.trackClick(experience: exp, link: Self.toLink(link))
+    }
+
+    @objc func experiencesTrackClose(_ experienceId: String) {
+        guard let exp = cached(experienceId) else { return }
+        Experiences.shared.trackClose(experience: exp)
+    }
+
+    @objc func experiencesClearFrequencyCaps() {
+        Experiences.shared.clearFrequencyCaps()
+    }
+
+    @objc func experiencesGetFrequencyCapCounts(
+        _ experienceId: String,
+        resolver: @escaping RCTPromiseResolveBlock,
+        rejecter: @escaping RCTPromiseRejectBlock
+    ) {
+        resolver(Experiences.shared.getFrequencyCapCounts(experienceId: experienceId))
+    }
+
+    @objc func experiencesGetFrequencyCapConfig(
+        _ resolver: @escaping RCTPromiseResolveBlock,
+        rejecter: @escaping RCTPromiseRejectBlock
+    ) {
+        resolver(Experiences.shared.getFrequencyCapConfig())
+    }
+
+    @objc func experiencesClearReadEditorials() {
+        Experiences.shared.clearReadEditorials()
+    }
+
+    @objc func experiencesGetReadEditorials(
+        _ resolver: @escaping RCTPromiseResolveBlock,
+        rejecter: @escaping RCTPromiseRejectBlock
+    ) {
+        resolver(Experiences.shared.getReadEditorials())
+    }
+
+    @objc func experiencesGetExperimentAssignments(
+        _ resolver: @escaping RCTPromiseResolveBlock,
+        rejecter: @escaping RCTPromiseRejectBlock
+    ) {
+        resolver(Experiences.shared.getExperimentAssignments())
+    }
+
+    @objc func experiencesSetExperimentAssignment(_ groupId: String, variantId: String) {
+        Experiences.shared.setExperimentAssignment(groupId: groupId, variantId: variantId)
+    }
+
+    @objc func experiencesClearExperimentAssignments() {
+        Experiences.shared.clearExperimentAssignments()
+    }
+
+    // MARK: - Cache
+
+    private func cache(_ experiences: [Experience]) {
+        cacheQueue.async(flags: .barrier) { [weak self] in
+            for e in experiences { self?.experienceCache[e.id] = e }
+        }
+    }
+
+    private func cached(_ id: String) -> Experience? {
+        cacheQueue.sync { experienceCache[id] }
+    }
+
+    // MARK: - Bridge helpers
+
+    private static func toLinks(_ array: NSArray) -> [RecirculationLink] {
+        return array.compactMap { item in
+            guard let dict = item as? NSDictionary else { return nil }
+            return toLink(dict)
+        }
+    }
+
+    private static func toLink(_ dict: NSDictionary) -> RecirculationLink {
+        let url = dict["url"] as? String ?? ""
+        let position = (dict["position"] as? NSNumber)?.intValue ?? 0
+        return RecirculationLink(url: url, position: position)
+    }
+
+    private static func serialize(_ experiences: [Experience]) -> String {
+        let array: [[String: Any]] = experiences.map { e in
+            let familyValue: Any = e.family.map { familyKey($0) } ?? NSNull()
+            let placementValue: Any = e.placement ?? NSNull()
+            let contentUrlValue: Any = e.contentUrl ?? NSNull()
+            let strategyValue: Any = e.strategy ?? NSNull()
+            let resolvedContentValue: Any = e.resolvedContent ?? NSNull()
+
+            let featuresValue: Any
+            if let f = e.features, JSONSerialization.isValidJSONObject(f) {
+                featuresValue = f
+            } else {
+                featuresValue = NSNull()
+            }
+
+            let rawJsonValue: Any
+            if JSONSerialization.isValidJSONObject(e.rawJson) {
+                rawJsonValue = e.rawJson
+            } else {
+                rawJsonValue = [String: Any]()
+            }
+
+            let selectorsValue: Any = e.selectors.map { sels in
+                sels.map { ["selector": $0.selector, "strategy": $0.strategy] }
+            } ?? NSNull()
+
+            let filtersValue: Any = e.filters.map { fs in
+                fs.map { ["key": $0.key, "operator": $0.operator.key, "values": $0.values] as [String: Any] }
+            } ?? NSNull()
+
+            return [
+                "id": e.id,
+                "name": e.name,
+                "type": e.type.rawValue,
+                "family": familyValue,
+                "placement": placementValue,
+                "contentUrl": contentUrlValue,
+                "contentType": contentTypeKey(e.contentType),
+                "features": featuresValue,
+                "strategy": strategyValue,
+                "selectors": selectorsValue,
+                "filters": filtersValue,
+                "rawJson": rawJsonValue,
+                "resolvedContent": resolvedContentValue,
+            ]
+        }
+        guard let data = try? JSONSerialization.data(withJSONObject: array, options: []),
+              let s = String(data: data, encoding: .utf8) else {
+            return "[]"
+        }
+        return s
+    }
+
+    private static let familyToServerKey: [ExperienceFamily: String] = [
+        .twitter: "twitterexperience",
+        .facebook: "facebookexperience",
+        .youtube: "youtubeexperience",
+        .recommender: "recommenderexperience",
+        .telegram: "telegramexperience",
+        .gathering: "gatheringexperience",
+        .affiliate: "affiliateexperience",
+        .podcast: "podcastexperience",
+        .experimentation: "experimentsexperience",
+        .widget: "widgetexperience",
+        .marfeelPass: "passexperience",
+        .script: "scriptexperience",
+        .paywall: "paywallexperience",
+        .marfeelSocial: "marfeelsocial",
+        .unknown: "unknown",
+    ]
+
+    private static func familyKey(_ family: ExperienceFamily) -> String {
+        return familyToServerKey[family] ?? "unknown"
+    }
+
+    private static let familyFromServerKey: [String: ExperienceFamily] = Dictionary(
+        uniqueKeysWithValues: familyToServerKey.map { ($0.value, $0.key) }
+    )
+
+    private static let contentTypeToServerKey: [ExperienceContentType: String] = [
+        .textHTML: "TextHTML",
+        .json: "Json",
+        .amp: "AMP",
+        .widgetProvider: "WidgetProvider",
+        .adServer: "AdServer",
+        .container: "Container",
+        .unknown: "Unknown",
+    ]
+
+    private static func contentTypeKey(_ ct: ExperienceContentType) -> String {
+        return contentTypeToServerKey[ct] ?? "Unknown"
     }
 }

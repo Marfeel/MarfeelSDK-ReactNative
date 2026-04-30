@@ -8,5 +8,6 @@ export type HomeStackParamList = {
 export type RootTabParamList = {
   HomeTab: undefined;
   Video: undefined;
+  Experiences: undefined;
   Settings: undefined;
 };
