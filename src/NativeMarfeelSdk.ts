@@ -42,6 +42,55 @@ export interface NativeMarfeelSdkType {
     metadata: string
   ): void;
   registerMultimediaEvent(id: string, event: string, eventTime: number): void;
+
+  recirculationTrackEligible(
+    name: string,
+    links: { url: string; position: number }[]
+  ): void;
+  recirculationTrackImpression(
+    name: string,
+    links: { url: string; position: number }[]
+  ): void;
+  recirculationTrackClick(
+    name: string,
+    link: { url: string; position: number }
+  ): void;
+
+  experiencesAddTargeting(key: string, value: string): void;
+  experiencesFetch(
+    filterByType: string | null,
+    filterByFamily: string | null,
+    resolve: boolean,
+    url: string | null
+  ): Promise<string>;
+  experiencesResolveContent(experienceId: string): Promise<string | null>;
+  experiencesTrackEligible(
+    experienceId: string,
+    links: { url: string; position: number }[]
+  ): void;
+  experiencesTrackImpression(
+    experienceId: string,
+    links: { url: string; position: number }[]
+  ): void;
+  experiencesTrackClick(
+    experienceId: string,
+    link: { url: string; position: number }
+  ): void;
+  experiencesTrackClose(experienceId: string): void;
+
+  experiencesClearFrequencyCaps(): void;
+  experiencesGetFrequencyCapCounts(
+    experienceId: string
+  ): Promise<Record<string, number>>;
+  experiencesGetFrequencyCapConfig(): Promise<Record<string, string[]>>;
+  experiencesClearReadEditorials(): void;
+  experiencesGetReadEditorials(): Promise<string[]>;
+  experiencesGetExperimentAssignments(): Promise<Record<string, string>>;
+  experiencesSetExperimentAssignment(
+    groupId: string,
+    variantId: string
+  ): void;
+  experiencesClearExperimentAssignments(): void;
 }
 
 export const NativeMarfeelSdk: NativeMarfeelSdkType = NativeModules.MarfeelSdk
