@@ -1,6 +1,7 @@
 export { CompassTracking } from './CompassTracking';
 export { MultimediaTracking } from './MultimediaTracking';
 export { Experiences } from './Experiences';
+export { Cdp } from './Cdp';
 export { Recirculation } from './Recirculation';
 export { CompassScrollView } from './components/CompassScrollView';
 export {
@@ -24,4 +25,8 @@ export type {
   ExperienceFilter,
   RecirculationLink,
   FetchExperiencesOptions,
+  CdpData,
+  CdpRfv,
+  MeterState,
+  MeterWindow,
 } from './types';

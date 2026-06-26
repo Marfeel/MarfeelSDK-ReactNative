@@ -41,6 +41,20 @@ export const NativeModules = {
     experiencesGetExperimentAssignments: vi.fn().mockResolvedValue({}),
     experiencesSetExperimentAssignment: vi.fn(),
     experiencesClearExperimentAssignments: vi.fn(),
+    cdpLinkIdentity: vi.fn(),
+    cdpGetData: vi
+      .fn()
+      .mockResolvedValue('{"masterId":null,"rfv":null,"cohorts":[]}'),
+    cdpGetMasterId: vi.fn().mockResolvedValue(null),
+    cdpAddSegment: vi.fn(),
+    cdpRemoveSegment: vi.fn(),
+    cdpSetSegments: vi.fn(),
+    cdpClearSegments: vi.fn(),
+    cdpGetSegments: vi.fn().mockResolvedValue([]),
+    cdpGetMeterSnapshot: vi.fn().mockResolvedValue('[]'),
+    cdpGetMeter: vi.fn().mockResolvedValue(null),
+    cdpListMeters: vi.fn().mockResolvedValue('[]'),
+    cdpIncrementMeter: vi.fn().mockResolvedValue(null),
   },
 };
 

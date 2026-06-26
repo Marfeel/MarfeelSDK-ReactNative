@@ -8,6 +8,10 @@ import com.facebook.react.bridge.ReadableArray
 import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.module.annotations.ReactModule
 import com.facebook.react.bridge.Arguments
+import com.marfeel.compass.cdp.Cdp
+import com.marfeel.compass.cdp.model.CdpData
+import com.marfeel.compass.cdp.model.MeterNotFoundError
+import com.marfeel.compass.cdp.model.MeterState
 import com.marfeel.compass.core.model.compass.ConversionOptions
 import com.marfeel.compass.core.model.compass.ConversionScope
 import com.marfeel.compass.core.model.compass.UserType
@@ -59,13 +63,13 @@ class MarfeelSdkModule(private val reactContext: ReactApplicationContext) :
     }
 
     @ReactMethod
-    fun initialize(accountId: String, pageTechnology: Int?) {
+    fun initialize(accountId: String, pageTechnology: Int?, enableCdp: Boolean) {
         runOnMainThread {
             val context = reactContext.applicationContext
             if (pageTechnology != null) {
-                CompassTracking.initialize(context, accountId, pageTechnology)
+                CompassTracking.initialize(context, accountId, pageTechnology, enableCdp)
             } else {
-                CompassTracking.initialize(context, accountId)
+                CompassTracking.initialize(context, accountId, enableCdp = enableCdp)
             }
         }
     }
@@ -460,6 +464,110 @@ class MarfeelSdkModule(private val reactContext: ReactApplicationContext) :
 
     // endregion
 
+    // region CDP
+
+    @ReactMethod
+    fun cdpLinkIdentity(type: String, value: String, isDeterministic: Boolean) {
+        Cdp.getInstance().cdpDoIdentityLink(type, value, isDeterministic)
+    }
+
+    @ReactMethod
+    fun cdpGetData(promise: Promise) {
+        try {
+            promise.resolve(serializeCdpData(Cdp.getInstance().getCdpData()))
+        } catch (e: Exception) {
+            promise.reject("CDP_GET_DATA", e.message, e)
+        }
+    }
+
+    @ReactMethod
+    fun cdpGetMasterId(promise: Promise) {
+        try {
+            promise.resolve(Cdp.getInstance().getCdpMasterId())
+        } catch (e: Exception) {
+            promise.reject("CDP_GET_MASTER_ID", e.message, e)
+        }
+    }
+
+    @ReactMethod
+    fun cdpAddSegment(segment: String) {
+        Cdp.getInstance().addCdpSegment(segment)
+    }
+
+    @ReactMethod
+    fun cdpRemoveSegment(segment: String) {
+        Cdp.getInstance().removeCdpSegment(segment)
+    }
+
+    @ReactMethod
+    fun cdpSetSegments(segments: ReadableArray) {
+        val list = mutableListOf<String>()
+        for (i in 0 until segments.size()) {
+            segments.getString(i)?.let { list.add(it) }
+        }
+        Cdp.getInstance().setCdpSegments(list)
+    }
+
+    @ReactMethod
+    fun cdpClearSegments() {
+        Cdp.getInstance().clearCdpSegments()
+    }
+
+    @ReactMethod
+    fun cdpGetSegments(promise: Promise) {
+        try {
+            val arr = Arguments.createArray()
+            Cdp.getInstance().getCdpSegments().forEach { arr.pushString(it) }
+            promise.resolve(arr)
+        } catch (e: Exception) {
+            promise.reject("CDP_GET_SEGMENTS", e.message, e)
+        }
+    }
+
+    @ReactMethod
+    fun cdpGetMeterSnapshot(promise: Promise) {
+        experiencesScope.launch {
+            try {
+                promise.resolve(serializeMeters(Cdp.getInstance().getMeterSnapshot()))
+            } catch (e: Exception) {
+                promise.reject("CDP_METER_SNAPSHOT", e.message, e)
+            }
+        }
+    }
+
+    @ReactMethod
+    fun cdpGetMeter(name: String, promise: Promise) {
+        try {
+            promise.resolve(serializeMeter(Cdp.getInstance().getMeter(name)))
+        } catch (e: Exception) {
+            promise.reject("CDP_GET_METER", e.message, e)
+        }
+    }
+
+    @ReactMethod
+    fun cdpListMeters(promise: Promise) {
+        try {
+            promise.resolve(serializeMeters(Cdp.getInstance().listMeters()))
+        } catch (e: Exception) {
+            promise.reject("CDP_LIST_METERS", e.message, e)
+        }
+    }
+
+    @ReactMethod
+    fun cdpIncrementMeter(name: String, promise: Promise) {
+        experiencesScope.launch {
+            try {
+                promise.resolve(serializeMeter(Cdp.getInstance().incrementMeter(name)))
+            } catch (e: MeterNotFoundError) {
+                promise.reject("METER_NOT_FOUND", e.message, e)
+            } catch (e: Exception) {
+                promise.reject("CDP_INCREMENT_METER", e.message, e)
+            }
+        }
+    }
+
+    // endregion
+
     // region Bridge helpers
 
     private fun ReadableArray.toLinks(): List<RecirculationLink> {
@@ -475,6 +583,57 @@ class MarfeelSdkModule(private val reactContext: ReactApplicationContext) :
         val url = if (hasKey("url") && !isNull("url")) getString("url") ?: "" else ""
         val position = if (hasKey("position") && !isNull("position")) getInt("position") else 0
         return RecirculationLink(url = url, position = position)
+    }
+
+    private val isoDateFormat by lazy {
+        java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", java.util.Locale.US).apply {
+            timeZone = java.util.TimeZone.getTimeZone("UTC")
+        }
+    }
+
+    private fun serializeCdpData(data: CdpData): String {
+        val o = JSONObject()
+        o.put("masterId", data.masterId ?: JSONObject.NULL)
+        o.put(
+            "rfv",
+            data.rfv?.let {
+                JSONObject()
+                    .put("rfv", it.rfv)
+                    .put("r", it.r)
+                    .put("f", it.f)
+                    .put("v", it.v)
+            } ?: JSONObject.NULL
+        )
+        o.put("cohorts", JSONArray(data.cohorts))
+        return o.toString()
+    }
+
+    private fun serializeMeters(meters: List<MeterState>): String {
+        val arr = JSONArray()
+        meters.forEach { arr.put(meterToJson(it)) }
+        return arr.toString()
+    }
+
+    private fun serializeMeter(meter: MeterState?): String? =
+        meter?.let { meterToJson(it).toString() }
+
+    private fun meterToJson(meter: MeterState): JSONObject {
+        val o = JSONObject()
+        o.put("name", meter.name)
+        o.put("count", meter.count)
+        meter.threshold?.let { o.put("threshold", it) }
+        meter.reached?.let { o.put("reached", it) }
+        meter.remaining?.let { o.put("remaining", it) }
+        meter.startedAt?.let { o.put("startedAt", isoDateFormat.format(it)) }
+        meter.expiresAt?.let { o.put("expiresAt", isoDateFormat.format(it)) }
+        o.put(
+            "window",
+            JSONObject()
+                .put("duration", meter.window.duration)
+                .put("period", meter.window.period)
+                .put("tz", meter.window.tz)
+        )
+        return o
     }
 
     private fun serializeExperiences(experiences: List<Experience>): String {

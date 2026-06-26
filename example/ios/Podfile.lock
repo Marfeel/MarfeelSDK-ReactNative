@@ -9,9 +9,9 @@ PODS:
     - hermes-engine/Pre-built (= 0.14.0)
   - hermes-engine/Pre-built (0.14.0)
   - marfeel-react-native-sdk (0.1.0):
-    - MarfeelSDK-iOS (~> 2.18.9)
+    - MarfeelSDK-iOS (~> 2.18.10)
     - React-Core
-  - MarfeelSDK-iOS (2.18.9)
+  - MarfeelSDK-iOS (2.18.10)
   - RCT-Folly (2024.11.18.00):
     - boost
     - DoubleConversion

@@ -9,5 +9,6 @@ export type RootTabParamList = {
   HomeTab: undefined;
   Video: undefined;
   Experiences: undefined;
+  CDP: undefined;
   Settings: undefined;
 };

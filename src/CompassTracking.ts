@@ -13,8 +13,16 @@ function getUserTypeNumericValue(userType: UserTypeValue): number {
 }
 
 export const CompassTracking = {
-  initialize(accountId: string, pageTechnology?: number): void {
-    NativeMarfeelSdk.initialize(accountId, pageTechnology ?? null);
+  initialize(
+    accountId: string,
+    pageTechnology?: number,
+    options?: { enableCdp?: boolean }
+  ): void {
+    NativeMarfeelSdk.initialize(
+      accountId,
+      pageTechnology ?? null,
+      options?.enableCdp ?? false
+    );
   },
 
   trackNewPage(url: string, options?: { rs?: string }): void {
