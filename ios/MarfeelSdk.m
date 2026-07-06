@@ -2,7 +2,7 @@
 
 @interface RCT_EXTERN_MODULE(MarfeelSdk, NSObject)
 
-RCT_EXTERN_METHOD(initialize:(NSString *)accountId pageTechnology:(nonnull NSNumber *)pageTechnology)
+RCT_EXTERN_METHOD(initialize:(NSString *)accountId pageTechnology:(nonnull NSNumber *)pageTechnology enableCdp:(BOOL)enableCdp)
 RCT_EXTERN_METHOD(trackNewPage:(NSString *)url rs:(NSString *)rs)
 RCT_EXTERN_METHOD(trackScreen:(NSString *)screen rs:(NSString *)rs)
 RCT_EXTERN_METHOD(updateScrollPercentage:(float)percentage)
@@ -57,6 +57,23 @@ RCT_EXTERN_METHOD(experiencesGetExperimentAssignments:(RCTPromiseResolveBlock)re
                   rejecter:(RCTPromiseRejectBlock)rejecter)
 RCT_EXTERN_METHOD(experiencesSetExperimentAssignment:(NSString *)groupId variantId:(NSString *)variantId)
 RCT_EXTERN_METHOD(experiencesClearExperimentAssignments)
+
+RCT_EXTERN_METHOD(cdpLinkIdentity:(NSString *)type value:(NSString *)value isDeterministic:(BOOL)isDeterministic)
+RCT_EXTERN_METHOD(cdpGetData:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject)
+RCT_EXTERN_METHOD(cdpGetMasterId:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject)
+RCT_EXTERN_METHOD(cdpAddSegment:(NSString *)segment)
+RCT_EXTERN_METHOD(cdpRemoveSegment:(NSString *)segment)
+RCT_EXTERN_METHOD(cdpSetSegments:(NSArray *)segments)
+RCT_EXTERN_METHOD(cdpClearSegments)
+RCT_EXTERN_METHOD(cdpGetSegments:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject)
+RCT_EXTERN_METHOD(cdpGetMeterSnapshot:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject)
+RCT_EXTERN_METHOD(cdpGetMeter:(NSString *)name
+                  resolver:(RCTPromiseResolveBlock)resolve
+                  rejecter:(RCTPromiseRejectBlock)reject)
+RCT_EXTERN_METHOD(cdpListMeters:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject)
+RCT_EXTERN_METHOD(cdpIncrementMeter:(NSString *)name
+                  resolver:(RCTPromiseResolveBlock)resolve
+                  rejecter:(RCTPromiseRejectBlock)reject)
 
 + (BOOL)requiresMainQueueSetup
 {

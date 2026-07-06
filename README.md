@@ -35,6 +35,12 @@ useEffect(() => {
 }, []);
 ```
 
+To opt in to the CDP subsystem (see [CDP](#cdp)), pass `enableCdp`:
+
+```typescript
+CompassTracking.initialize('YOUR_ACCOUNT_ID', undefined, { enableCdp: true });
+```
+
 ### Page Tracking
 
 ```typescript
@@ -128,6 +134,51 @@ MultimediaTracking.registerEvent('video-1', MultimediaEvent.Pause, 45);
 CompassTracking.setConsent(true);  // User gave consent
 CompassTracking.setConsent(false); // User revoked consent
 ```
+
+### CDP
+
+The Customer Data Platform (CDP) assigns a stable visitor `masterId`, carries
+read-only RFV + cohorts, lets you push segments, and exposes server-authoritative
+meters (e.g. metered paywalls).
+
+The CDP is **opt-in** and gated behind two conditions: `enableCdp: true` at
+initialization **and** personalization consent (`CompassTracking.setConsent(true)`).
+Until both are satisfied, every call is inert and no network request is made.
+Identity resolution is automatic — there is no method to call for it.
+
+```typescript
+import { Cdp } from '@marfeel/react-native-sdk';
+
+// Link a known identifier (login, CRM id, email hash…)
+Cdp.linkIdentity('registered_user_id', 'user@example.com', true);
+
+// Read the current identity contribution
+const { masterId, rfv, cohorts } = await Cdp.getData();
+const id = await Cdp.getMasterId();
+
+// Segments (publisher-assigned labels; written locally first, synced when allowed)
+Cdp.addSegment('sports_fan');
+Cdp.setSegments(['sports_fan', 'newsletter_subscriber']);
+Cdp.removeSegment('sports_fan');
+Cdp.clearSegments();
+const segments = await Cdp.getSegments();
+
+// Meters (stale-while-revalidate, fail-open)
+const meters = await Cdp.getMeterSnapshot(); // network refresh
+const cached = await Cdp.listMeters();       // in-memory mirror
+const paywall = await Cdp.getMeter('paywall');
+
+try {
+  const updated = await Cdp.incrementMeter('paywall');
+} catch (e) {
+  // rejects with code METER_NOT_FOUND when the meter is not configured for the site
+}
+```
+
+A `MeterState` is `{ name, count, threshold?, reached?, remaining?, startedAt?,
+expiresAt?, window }`. The `threshold` / `reached` / `remaining` fields are present
+only when the meter has a threshold configured; `startedAt` / `expiresAt` are ISO-8601
+strings.
 
 ## License
 

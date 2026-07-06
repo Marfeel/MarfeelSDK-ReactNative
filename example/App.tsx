@@ -7,6 +7,7 @@ import { HomeScreen } from './src/screens/HomeScreen';
 import { ArticleScreen } from './src/screens/ArticleScreen';
 import { VideoScreen } from './src/screens/VideoScreen';
 import { ExperiencesScreen } from './src/screens/ExperiencesScreen';
+import { CdpScreen } from './src/screens/CdpScreen';
 import { SettingsScreen } from './src/screens/SettingsScreen';
 import type { HomeStackParamList, RootTabParamList } from './src/navigation/types';
 
@@ -24,7 +25,7 @@ function HomeStackNavigator() {
 
 export default function App() {
   useEffect(() => {
-    CompassTracking.initialize('1659', 105);
+    CompassTracking.initialize('1659', 105, { enableCdp: true });
     CompassTracking.setConsent(true);
     CompassTracking.setLandingPage('http://dev.marfeel.co/');
     CompassTracking.trackScreen('home');
@@ -36,6 +37,7 @@ export default function App() {
         <Tab.Screen name="HomeTab" component={HomeStackNavigator} options={{ title: 'Home' }} />
         <Tab.Screen name="Video" component={VideoScreen} />
         <Tab.Screen name="Experiences" component={ExperiencesScreen} options={{ headerShown: true }} />
+        <Tab.Screen name="CDP" component={CdpScreen} options={{ headerShown: true }} />
         <Tab.Screen name="Settings" component={SettingsScreen} />
       </Tab.Navigator>
     </NavigationContainer>

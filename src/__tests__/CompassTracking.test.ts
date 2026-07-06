@@ -13,12 +13,29 @@ describe('CompassTracking', () => {
   describe('initialize', () => {
     it('calls native initialize with accountId', () => {
       CompassTracking.initialize('12345');
-      expect(mockNativeModule.initialize).toHaveBeenCalledWith('12345', null);
+      expect(mockNativeModule.initialize).toHaveBeenCalledWith(
+        '12345',
+        null,
+        false
+      );
     });
 
     it('calls native initialize with pageTechnology', () => {
       CompassTracking.initialize('12345', 11);
-      expect(mockNativeModule.initialize).toHaveBeenCalledWith('12345', 11);
+      expect(mockNativeModule.initialize).toHaveBeenCalledWith(
+        '12345',
+        11,
+        false
+      );
+    });
+
+    it('forwards enableCdp opt-in', () => {
+      CompassTracking.initialize('12345', 11, { enableCdp: true });
+      expect(mockNativeModule.initialize).toHaveBeenCalledWith(
+        '12345',
+        11,
+        true
+      );
     });
   });
 

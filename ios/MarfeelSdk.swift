@@ -11,12 +11,12 @@ class MarfeelSdk: NSObject {
         attributes: .concurrent
     )
 
-    @objc func initialize(_ accountId: String, pageTechnology: NSNumber?) {
+    @objc func initialize(_ accountId: String, pageTechnology: NSNumber?, enableCdp: Bool) {
         let accountIdInt = Int(accountId) ?? 0
         if let tech = pageTechnology?.intValue, tech > 0 {
-            CompassTracker.initialize(accountId: accountIdInt, pageTechnology: tech)
+            CompassTracker.initialize(accountId: accountIdInt, pageTechnology: tech, enableCdp: enableCdp)
         } else {
-            CompassTracker.initialize(accountId: accountIdInt)
+            CompassTracker.initialize(accountId: accountIdInt, enableCdp: enableCdp)
         }
     }
 
@@ -312,6 +312,69 @@ class MarfeelSdk: NSObject {
         Experiences.shared.clearExperimentAssignments()
     }
 
+    // MARK: - CDP
+
+    @objc func cdpLinkIdentity(_ type: String, value: String, isDeterministic: Bool) {
+        Cdp.shared.cdpDoIdentityLink(type: type, value: value, isDeterministic: isDeterministic)
+    }
+
+    @objc func cdpGetData(_ resolve: @escaping RCTPromiseResolveBlock, reject: @escaping RCTPromiseRejectBlock) {
+        resolve(Self.serialize(Cdp.shared.getCdpData()))
+    }
+
+    @objc func cdpGetMasterId(_ resolve: @escaping RCTPromiseResolveBlock, reject: @escaping RCTPromiseRejectBlock) {
+        resolve(Cdp.shared.getCdpMasterId() ?? NSNull())
+    }
+
+    @objc func cdpAddSegment(_ segment: String) {
+        Cdp.shared.addCdpSegment(segment)
+    }
+
+    @objc func cdpRemoveSegment(_ segment: String) {
+        Cdp.shared.removeCdpSegment(segment)
+    }
+
+    @objc func cdpSetSegments(_ segments: [String]) {
+        Cdp.shared.setCdpSegments(segments)
+    }
+
+    @objc func cdpClearSegments() {
+        Cdp.shared.clearCdpSegments()
+    }
+
+    @objc func cdpGetSegments(_ resolve: @escaping RCTPromiseResolveBlock, reject: @escaping RCTPromiseRejectBlock) {
+        resolve(Cdp.shared.getCdpSegments())
+    }
+
+    @objc func cdpGetMeterSnapshot(_ resolve: @escaping RCTPromiseResolveBlock, reject: @escaping RCTPromiseRejectBlock) {
+        Cdp.shared.getMeterSnapshot { meters in
+            resolve(Self.serialize(meters))
+        }
+    }
+
+    @objc func cdpGetMeter(_ name: String, resolver resolve: @escaping RCTPromiseResolveBlock, rejecter reject: @escaping RCTPromiseRejectBlock) {
+        resolve(Self.serialize(Cdp.shared.getMeter(name)) ?? NSNull())
+    }
+
+    @objc func cdpListMeters(_ resolve: @escaping RCTPromiseResolveBlock, reject: @escaping RCTPromiseRejectBlock) {
+        resolve(Self.serialize(Cdp.shared.listMeters()))
+    }
+
+    @objc func cdpIncrementMeter(_ name: String, resolver resolve: @escaping RCTPromiseResolveBlock, rejecter reject: @escaping RCTPromiseRejectBlock) {
+        Cdp.shared.incrementMeter(name) { result in
+            switch result {
+            case .success(let meter):
+                resolve(Self.serialize(meter) ?? NSNull())
+            case .failure(let error):
+                if let notFound = error as? MeterNotFoundError {
+                    reject("METER_NOT_FOUND", "meter_not_found: \(notFound.meterName)", error)
+                } else {
+                    reject("CDP_INCREMENT_METER", error.localizedDescription, error)
+                }
+            }
+        }
+    }
+
     // MARK: - Cache
 
     private func cache(_ experiences: [Experience]) {
@@ -337,6 +400,67 @@ class MarfeelSdk: NSObject {
         let url = dict["url"] as? String ?? ""
         let position = (dict["position"] as? NSNumber)?.intValue ?? 0
         return RecirculationLink(url: url, position: position)
+    }
+
+    private static let isoDateFormatter: ISO8601DateFormatter = {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return formatter
+    }()
+
+    private static func serialize(_ data: CdpData) -> String {
+        let rfvValue: Any
+        if let rfv = data.rfv {
+            rfvValue = ["rfv": rfv.rfv, "r": rfv.r, "f": rfv.f, "v": rfv.v]
+        } else {
+            rfvValue = NSNull()
+        }
+        let dict: [String: Any] = [
+            "masterId": data.masterId ?? NSNull(),
+            "rfv": rfvValue,
+            "cohorts": data.cohorts,
+        ]
+        guard let json = try? JSONSerialization.data(withJSONObject: dict, options: []),
+              let s = String(data: json, encoding: .utf8) else {
+            return "{\"masterId\":null,\"rfv\":null,\"cohorts\":[]}"
+        }
+        return s
+    }
+
+    private static func meterDict(_ meter: MeterState) -> [String: Any] {
+        var dict: [String: Any] = [
+            "name": meter.name,
+            "count": meter.count,
+            "window": [
+                "duration": meter.window.duration,
+                "period": meter.window.period,
+                "tz": meter.window.tz,
+            ],
+        ]
+        if let threshold = meter.threshold { dict["threshold"] = threshold }
+        if let reached = meter.reached { dict["reached"] = reached }
+        if let remaining = meter.remaining { dict["remaining"] = remaining }
+        if let startedAt = meter.startedAt { dict["startedAt"] = isoDateFormatter.string(from: startedAt) }
+        if let expiresAt = meter.expiresAt { dict["expiresAt"] = isoDateFormatter.string(from: expiresAt) }
+        return dict
+    }
+
+    private static func serialize(_ meters: [MeterState]) -> String {
+        let array = meters.map { meterDict($0) }
+        guard let json = try? JSONSerialization.data(withJSONObject: array, options: []),
+              let s = String(data: json, encoding: .utf8) else {
+            return "[]"
+        }
+        return s
+    }
+
+    private static func serialize(_ meter: MeterState?) -> String? {
+        guard let meter = meter else { return nil }
+        guard let json = try? JSONSerialization.data(withJSONObject: meterDict(meter), options: []),
+              let s = String(data: json, encoding: .utf8) else {
+            return nil
+        }
+        return s
     }
 
     private static func serialize(_ experiences: [Experience]) -> String {

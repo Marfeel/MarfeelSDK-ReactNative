@@ -61,6 +61,36 @@ export interface RFV {
   v: number;
 }
 
+export interface CdpRfv {
+  rfv: number;
+  r: number;
+  f: number;
+  v: number;
+}
+
+export interface CdpData {
+  masterId: string | null;
+  rfv: CdpRfv | null;
+  cohorts: number[];
+}
+
+export interface MeterWindow {
+  duration: string;
+  period: string;
+  tz: string;
+}
+
+export interface MeterState {
+  name: string;
+  count: number;
+  threshold?: number;
+  reached?: boolean;
+  remaining?: number;
+  startedAt?: string;
+  expiresAt?: string;
+  window: MeterWindow;
+}
+
 export interface TrackingOptions {
   rs?: string;
 }

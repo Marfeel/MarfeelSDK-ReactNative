@@ -7,7 +7,11 @@ const LINKING_ERROR =
   '- You are not using Expo Go\n';
 
 export interface NativeMarfeelSdkType {
-  initialize(accountId: string, pageTechnology: number | null): void;
+  initialize(
+    accountId: string,
+    pageTechnology: number | null,
+    enableCdp: boolean
+  ): void;
   trackNewPage(url: string, rs: string | null): void;
   trackScreen(screen: string, rs: string | null): void;
   updateScrollPercentage(percentage: number): void;
@@ -91,6 +95,23 @@ export interface NativeMarfeelSdkType {
     variantId: string
   ): void;
   experiencesClearExperimentAssignments(): void;
+
+  cdpLinkIdentity(
+    type: string,
+    value: string,
+    isDeterministic: boolean
+  ): void;
+  cdpGetData(): Promise<string>;
+  cdpGetMasterId(): Promise<string | null>;
+  cdpAddSegment(segment: string): void;
+  cdpRemoveSegment(segment: string): void;
+  cdpSetSegments(segments: string[]): void;
+  cdpClearSegments(): void;
+  cdpGetSegments(): Promise<string[]>;
+  cdpGetMeterSnapshot(): Promise<string>;
+  cdpGetMeter(name: string): Promise<string | null>;
+  cdpListMeters(): Promise<string>;
+  cdpIncrementMeter(name: string): Promise<string | null>;
 }
 
 export const NativeMarfeelSdk: NativeMarfeelSdkType = NativeModules.MarfeelSdk
