@@ -81,6 +81,13 @@ describe('CompassTracking', () => {
     });
   });
 
+  describe('getSessionId', () => {
+    it('returns the session id', async () => {
+      const sessionId = await CompassTracking.getSessionId();
+      expect(sessionId).toBe('test-session-id');
+    });
+  });
+
   describe('trackConversion', () => {
     it('calls with conversion only', () => {
       CompassTracking.trackConversion('signup');
