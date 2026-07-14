@@ -19,6 +19,7 @@ export interface NativeMarfeelSdkType {
   setLandingPage(landingPage: string): void;
   setSiteUserId(userId: string): void;
   getUserId(): Promise<string>;
+  getSessionId(): Promise<string>;
   setUserType(userType: number): void;
   getRFV(): Promise<string | null>;
   setPageVar(name: string, value: string): void;

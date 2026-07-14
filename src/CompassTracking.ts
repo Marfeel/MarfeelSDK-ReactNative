@@ -53,6 +53,10 @@ export const CompassTracking = {
     return NativeMarfeelSdk.getUserId();
   },
 
+  getSessionId(): Promise<string> {
+    return NativeMarfeelSdk.getSessionId();
+  },
+
   setUserType(userType: UserTypeValue): void {
     NativeMarfeelSdk.setUserType(getUserTypeNumericValue(userType));
   },

@@ -53,6 +53,11 @@ class MarfeelSdk: NSObject {
         resolve(userId)
     }
 
+    @objc func getSessionId(_ resolve: @escaping RCTPromiseResolveBlock, reject: @escaping RCTPromiseRejectBlock) {
+        let sessionId = CompassTracker.shared.getSessionId()
+        resolve(sessionId)
+    }
+
     @objc func setUserType(_ userType: Int) {
         let type: UserType
         switch userType {
