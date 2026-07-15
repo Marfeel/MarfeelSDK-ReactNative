@@ -76,6 +76,7 @@ CompassTracking.setSiteUserId('user-123');
 CompassTracking.setUserType(UserType.Logged);
 
 const userId = await CompassTracking.getUserId();
+const sessionId = await CompassTracking.getSessionId();
 const rfv = await CompassTracking.getRFV();
 ```
 

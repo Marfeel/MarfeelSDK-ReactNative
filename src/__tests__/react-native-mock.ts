@@ -9,6 +9,7 @@ export const NativeModules = {
     setLandingPage: vi.fn(),
     setSiteUserId: vi.fn(),
     getUserId: vi.fn().mockResolvedValue('test-user-id'),
+    getSessionId: vi.fn().mockResolvedValue('test-session-id'),
     setUserType: vi.fn(),
     getRFV: vi.fn().mockResolvedValue('{"rfv":0.5,"r":1,"f":2,"v":3}'),
     setPageVar: vi.fn(),

@@ -46,6 +46,15 @@ export function SettingsScreen() {
       >
         <Text style={styles.buttonText}>Get User ID</Text>
       </Pressable>
+      <Pressable
+        style={styles.button}
+        onPress={async () => {
+          const sessionId = await CompassTracking.getSessionId();
+          setResult(`Session ID: ${sessionId}`);
+        }}
+      >
+        <Text style={styles.buttonText}>Get Session ID</Text>
+      </Pressable>
 
       <Text style={styles.sectionTitle}>User Type</Text>
       <View style={styles.rowWrap}>

@@ -126,6 +126,18 @@ class MarfeelSdkModule(private val reactContext: ReactApplicationContext) :
     }
 
     @ReactMethod
+    fun getSessionId(promise: Promise) {
+        mainHandler.post {
+            try {
+                val sessionId = CompassTracking.getInstance().getSessionId()
+                promise.resolve(sessionId)
+            } catch (e: Exception) {
+                promise.reject("ERROR", e.message)
+            }
+        }
+    }
+
+    @ReactMethod
     fun setUserType(userType: Int) {
         runOnMainThread {
             val type = when (userType) {
