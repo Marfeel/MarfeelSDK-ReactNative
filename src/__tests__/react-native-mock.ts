@@ -22,6 +22,11 @@ export const NativeModules = {
     clearUserSegments: vi.fn(),
     trackConversion: vi.fn(),
     setConsent: vi.fn(),
+    resetUser: vi.fn().mockResolvedValue(undefined),
+    getUserSegments: vi.fn().mockResolvedValue([]),
+    getUserSegmentsAsync: vi.fn().mockResolvedValue([]),
+    getUserVars: vi.fn().mockResolvedValue({}),
+    getUserVarsAsync: vi.fn().mockResolvedValue({}),
     initializeMultimediaItem: vi.fn(),
     registerMultimediaEvent: vi.fn(),
     recirculationTrackEligible: vi.fn(),
@@ -42,11 +47,23 @@ export const NativeModules = {
     experiencesGetExperimentAssignments: vi.fn().mockResolvedValue({}),
     experiencesSetExperimentAssignment: vi.fn(),
     experiencesClearExperimentAssignments: vi.fn(),
-    cdpLinkIdentity: vi.fn(),
-    cdpGetData: vi
+    cdpSetIdentity: vi.fn().mockResolvedValue(undefined),
+    cdpDeleteIdentity: vi.fn().mockResolvedValue(undefined),
+    cdpGetUserProfile: vi
       .fn()
-      .mockResolvedValue('{"masterId":null,"rfv":null,"cohorts":[]}'),
+      .mockResolvedValue(
+        '{"masterId":null,"rfv":null,"cohorts":[],"identityFresh":false}'
+      ),
     cdpGetMasterId: vi.fn().mockResolvedValue(null),
+    cdpTrackConsent: vi.fn().mockResolvedValue(null),
+    cdpGetConsent: vi.fn().mockResolvedValue(null),
+    cdpHasConsent: vi.fn().mockResolvedValue(false),
+    cdpListServerSegments: vi.fn().mockResolvedValue([]),
+    cdpGetServerSegments: vi.fn().mockResolvedValue([]),
+    cdpListServerProperties: vi.fn().mockResolvedValue({}),
+    cdpGetServerProperties: vi.fn().mockResolvedValue({}),
+    cdpHashEmail: vi.fn().mockResolvedValue('hash'),
+    cdpHashPhone: vi.fn().mockResolvedValue('hash'),
     cdpAddSegment: vi.fn(),
     cdpRemoveSegment: vi.fn(),
     cdpSetSegments: vi.fn(),

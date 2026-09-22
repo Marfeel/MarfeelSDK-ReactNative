@@ -23,6 +23,11 @@ RCT_EXTERN_METHOD(removeUserSegment:(NSString *)segment)
 RCT_EXTERN_METHOD(clearUserSegments)
 RCT_EXTERN_METHOD(trackConversion:(NSString *)conversion initiator:(NSString *)initiator id:(NSString *)id value:(NSString *)value meta:(NSDictionary *)meta scope:(NSString *)scope)
 RCT_EXTERN_METHOD(setConsent:(BOOL)hasConsent)
+RCT_EXTERN_METHOD(resetUser:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject)
+RCT_EXTERN_METHOD(getUserSegments:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject)
+RCT_EXTERN_METHOD(getUserSegmentsAsync:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject)
+RCT_EXTERN_METHOD(getUserVars:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject)
+RCT_EXTERN_METHOD(getUserVarsAsync:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject)
 RCT_EXTERN_METHOD(initializeMultimediaItem:(NSString *)id provider:(NSString *)provider providerId:(NSString *)providerId type:(NSString *)type metadata:(NSString *)metadata)
 RCT_EXTERN_METHOD(registerMultimediaEvent:(NSString *)id event:(NSString *)event eventTime:(int)eventTime)
 
@@ -59,9 +64,39 @@ RCT_EXTERN_METHOD(experiencesGetExperimentAssignments:(RCTPromiseResolveBlock)re
 RCT_EXTERN_METHOD(experiencesSetExperimentAssignment:(NSString *)groupId variantId:(NSString *)variantId)
 RCT_EXTERN_METHOD(experiencesClearExperimentAssignments)
 
-RCT_EXTERN_METHOD(cdpLinkIdentity:(NSString *)type value:(NSString *)value isDeterministic:(BOOL)isDeterministic)
-RCT_EXTERN_METHOD(cdpGetData:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject)
+RCT_EXTERN_METHOD(cdpSetIdentity:(NSString *)type
+                  value:(NSString *)value
+                  isDeterministic:(BOOL)isDeterministic
+                  resolver:(RCTPromiseResolveBlock)resolve
+                  rejecter:(RCTPromiseRejectBlock)reject)
+RCT_EXTERN_METHOD(cdpDeleteIdentity:(NSString *)type
+                  value:(NSString *)value
+                  resolver:(RCTPromiseResolveBlock)resolve
+                  rejecter:(RCTPromiseRejectBlock)reject)
+RCT_EXTERN_METHOD(cdpGetUserProfile:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject)
 RCT_EXTERN_METHOD(cdpGetMasterId:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject)
+RCT_EXTERN_METHOD(cdpTrackConsent:(NSString *)decisionJson
+                  resolver:(RCTPromiseResolveBlock)resolve
+                  rejecter:(RCTPromiseRejectBlock)reject)
+RCT_EXTERN_METHOD(cdpGetConsent:(NSString *)consentId
+                  versionId:(NSString *)versionId
+                  resolver:(RCTPromiseResolveBlock)resolve
+                  rejecter:(RCTPromiseRejectBlock)reject)
+RCT_EXTERN_METHOD(cdpHasConsent:(NSString *)consentId
+                  versionId:(NSString *)versionId
+                  email:(NSString *)email
+                  resolver:(RCTPromiseResolveBlock)resolve
+                  rejecter:(RCTPromiseRejectBlock)reject)
+RCT_EXTERN_METHOD(cdpListServerSegments:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject)
+RCT_EXTERN_METHOD(cdpGetServerSegments:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject)
+RCT_EXTERN_METHOD(cdpListServerProperties:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject)
+RCT_EXTERN_METHOD(cdpGetServerProperties:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject)
+RCT_EXTERN_METHOD(cdpHashEmail:(NSString *)email
+                  resolver:(RCTPromiseResolveBlock)resolve
+                  rejecter:(RCTPromiseRejectBlock)reject)
+RCT_EXTERN_METHOD(cdpHashPhone:(NSString *)phone
+                  resolver:(RCTPromiseResolveBlock)resolve
+                  rejecter:(RCTPromiseRejectBlock)reject)
 RCT_EXTERN_METHOD(cdpAddSegment:(NSString *)segment)
 RCT_EXTERN_METHOD(cdpRemoveSegment:(NSString *)segment)
 RCT_EXTERN_METHOD(cdpSetSegments:(NSArray *)segments)

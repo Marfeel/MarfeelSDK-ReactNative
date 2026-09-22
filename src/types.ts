@@ -72,6 +72,106 @@ export interface CdpData {
   masterId: string | null;
   rfv: CdpRfv | null;
   cohorts: number[];
+  /** True only when this app process resolved the identity itself; a warm cache never counts. */
+  identityFresh: boolean;
+}
+
+/**
+ * The well-known identity types for `Cdp.setIdentity` / `Cdp.deleteIdentity`. The set is
+ * open (sites register their own), so this is documentation, never a validation list.
+ * Stable types make the user registered and their data permanent; device-bound types
+ * leave them anonymous, aged out 180 days after the last write. `email_hash` /
+ * `phone_hash` are deliberately absent: they create a parallel user that never merges
+ * with `*_sha256`.
+ */
+export const CdpIdentityTypes = Object.freeze({
+  EMAIL: 'email',
+  EMAIL_SHA256: 'email_sha256',
+  PHONE: 'phone',
+  PHONE_SHA256: 'phone_sha256',
+  EXTERNAL_ID: 'external_id',
+  CUSTOMER_ID: 'customer_id',
+  REGISTERED_USER_ID: 'registered_user_id',
+
+  LOGIN_ID: 'login_id',
+  CRM_ID: 'crm_id',
+  COOKIE: 'cookie',
+  DEVICE_ID: 'device_id',
+  MAID: 'maid',
+  IDFA: 'idfa',
+  IDFV: 'idfv',
+  RAMPID: 'rampid',
+  PUSH_TOKEN: 'push_token',
+} as const);
+
+export type CdpIdentityType =
+  | (typeof CdpIdentityTypes)[keyof typeof CdpIdentityTypes]
+  | (string & {});
+
+export type CdpConsentStatus = 'accepted' | 'rejected';
+
+export interface CdpConsent {
+  consentId: string;
+  /** The version's id from CDP > Settings > Consents. Opaque: sent verbatim (0 is valid). */
+  versionId: string | number;
+  status: CdpConsentStatus;
+  metadata?: Record<string, string>;
+  /** Linked to the master when one exists; otherwise the subject. Hashed on the device before it leaves. */
+  email?: string;
+}
+
+export interface CdpConsentRef {
+  consentId: string;
+  /** Absent → the consent's default version, as configured in Compass. */
+  versionId?: string | number;
+}
+
+export interface CdpConsentQuery {
+  consentId: string;
+  /** When given, only an accept at exactly this version counts. Absent → any accepted version. */
+  versionId?: string | number;
+  /** Sent alongside the master when both exist, so an email accepted elsewhere answers before it is linked here. */
+  email?: string;
+}
+
+/** Carried through verbatim from the server; `form-submit` means show no box at all. */
+export type CdpConsentAcceptMethod =
+  | 'check-box'
+  | 'pre-checked'
+  | 'form-submit'
+  | (string & {});
+
+/** Pair `if-not-accepted` with `Cdp.hasConsent` — this is config, not a verdict. */
+export type CdpConsentShowPolicy = 'always' | 'if-not-accepted';
+
+export interface CdpConsentVersion {
+  versionId: string;
+  label: string;
+  date: string | null;
+  displayPrompt: string | null;
+  errorMessage: string | null;
+  metadata: Record<string, string>;
+}
+
+export interface CdpConsentDefinition {
+  consentId: string;
+  name: string;
+  purpose: string | null;
+  mandatory: boolean;
+  acceptMethod: CdpConsentAcceptMethod;
+  showPolicy: CdpConsentShowPolicy;
+  version: CdpConsentVersion | null;
+}
+
+export interface CdpConsentRecordResponse {
+  /** The canonical master; may differ from the device's after a merge. Null for an anonymous decision. */
+  masterId: string | null;
+  consentId: string | null;
+  consentVersionId: string | null;
+  /** The server's short vocabulary: `accept` / `reject`. */
+  status: string | null;
+  recorded: boolean;
+  stored: boolean;
 }
 
 export interface MeterWindow {

@@ -39,6 +39,11 @@ export interface NativeMarfeelSdkType {
     scope: string | null
   ): void;
   setConsent(hasConsent: boolean): void;
+  resetUser(): Promise<void>;
+  getUserSegments(): Promise<string[]>;
+  getUserSegmentsAsync(): Promise<string[]>;
+  getUserVars(): Promise<Record<string, string>>;
+  getUserVarsAsync(): Promise<Record<string, string>>;
   initializeMultimediaItem(
     id: string,
     provider: string,
@@ -97,13 +102,30 @@ export interface NativeMarfeelSdkType {
   ): void;
   experiencesClearExperimentAssignments(): void;
 
-  cdpLinkIdentity(
+  cdpSetIdentity(
     type: string,
     value: string,
     isDeterministic: boolean
-  ): void;
-  cdpGetData(): Promise<string>;
+  ): Promise<void>;
+  cdpDeleteIdentity(type: string, value: string | null): Promise<void>;
+  cdpGetUserProfile(): Promise<string>;
   cdpGetMasterId(): Promise<string | null>;
+  cdpTrackConsent(decisionJson: string): Promise<string | null>;
+  cdpGetConsent(
+    consentId: string,
+    versionId: string | null
+  ): Promise<string | null>;
+  cdpHasConsent(
+    consentId: string,
+    versionId: string | null,
+    email: string | null
+  ): Promise<boolean>;
+  cdpListServerSegments(): Promise<string[]>;
+  cdpGetServerSegments(): Promise<string[]>;
+  cdpListServerProperties(): Promise<Record<string, string>>;
+  cdpGetServerProperties(): Promise<Record<string, string>>;
+  cdpHashEmail(email: string): Promise<string>;
+  cdpHashPhone(phone: string): Promise<string>;
   cdpAddSegment(segment: string): void;
   cdpRemoveSegment(segment: string): void;
   cdpSetSegments(segments: string[]): void;

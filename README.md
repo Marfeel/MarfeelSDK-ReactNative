@@ -113,7 +113,31 @@ CompassTracking.addUserSegment('premium');
 CompassTracking.setUserSegments(['premium', 'newsletter']);
 CompassTracking.removeUserSegment('premium');
 CompassTracking.clearUserSegments();
+
+const segments = await CompassTracking.getUserSegments();       // as a beacon sends them
+const current = await CompassTracking.getUserSegmentsAsync();   // after resolving identity
 ```
+
+`getUserSegments` returns the device-owned segments unioned with the Server Segments the
+CDP asserts (server first, deduplicated) and capped at 100. When the union overflows, the
+user var `mrf_tooManySegments` is set and device-owned segments are the ones dropped.
+`getUserVars` / `getUserVarsAsync` likewise return the device-owned vars followed by the
+CDP's Server Properties (device-owned wins on a collision).
+
+### Sign-out
+
+```typescript
+await CompassTracking.resetUser();
+CompassTracking.trackScreen('home');
+```
+
+`resetUser` turns the device into a new visitor: the site user id is dropped, a new
+internal user id, first visit and session are minted, user vars and segments are emptied
+and the whole local CDP state (master id, cached rfv/cohorts, mirrors, meters, anonymous
+consent memory) is wiped. The local rotation happens before the promise is created; the
+promise settles once a best-effort remote CDP reset finishes (bounded to five seconds).
+It never rejects and never re-resolves identity — the next `trackNewPage` / `trackScreen`
+does, so call one after signing out. Concurrent calls share one run.
 
 ### Multimedia Tracking
 
@@ -148,14 +172,20 @@ Until both are satisfied, every call is inert and no network request is made.
 Identity resolution is automatic — there is no method to call for it.
 
 ```typescript
-import { Cdp } from '@marfeel/react-native-sdk';
+import { Cdp, CdpIdentityTypes } from '@marfeel/react-native-sdk';
 
 // Link a known identifier (login, CRM id, email hash…)
-Cdp.linkIdentity('registered_user_id', 'user@example.com', true);
+await Cdp.setIdentity(CdpIdentityTypes.REGISTERED_USER_ID, 'user-123', true);
+await Cdp.setIdentity(CdpIdentityTypes.EMAIL_SHA256, await Cdp.hashEmail('user@example.com'));
+await Cdp.deleteIdentity(CdpIdentityTypes.CRM_ID); // every crm_id the master owns
 
 // Read the current identity contribution
-const { masterId, rfv, cohorts } = await Cdp.getData();
+const { masterId, rfv, cohorts, identityFresh } = await Cdp.getUserProfile();
 const id = await Cdp.getMasterId();
+
+// Segments and properties the CDP asserts server-side (never re-asserted by this device)
+const serverSegments = await Cdp.listServerSegments();
+const serverProperties = await Cdp.listServerProperties();
 
 // Segments (publisher-assigned labels; written locally first, synced when allowed)
 Cdp.addSegment('sports_fan');
@@ -180,6 +210,45 @@ A `MeterState` is `{ name, count, threshold?, reached?, remaining?, startedAt?,
 expiresAt?, window }`. The `threshold` / `reached` / `remaining` fields are present
 only when the meter has a threshold configured; `startedAt` / `expiresAt` are ISO-8601
 strings.
+
+`setIdentity` rejects with a `TypeError` on an empty type or value instead of posting
+them. `CdpIdentityTypes` lists the well-known types: the stable ones (`email`,
+`email_sha256`, `phone`, `phone_sha256`, `external_id`, `customer_id`,
+`registered_user_id`) make the user registered; the device-bound ones (`login_id`,
+`crm_id`, `cookie`, `device_id`, `maid`, `idfa`, `idfv`, `rampid`, `push_token`) leave
+them anonymous. `hashEmail` / `hashPhone` normalise (`trim` + lower-case for emails,
+`trim` only for phones) and SHA-256 the value on the device. `linkIdentity` and
+`getData` remain as deprecated aliases.
+
+#### Publisher consents
+
+Publisher consents (a privacy policy, a newsletter opt-in) are recorded in the CDP. They
+are gated only on `enableCdp`, **not** on `setConsent`: a visitor who declines tracking and
+accepts the privacy policy has still accepted it.
+
+```typescript
+const definition = await Cdp.getConsent({ consentId: 'privacy-policy' });
+// { consentId, name, purpose, mandatory, acceptMethod, showPolicy, version }
+
+const accepted = await Cdp.hasConsent({ consentId: 'privacy-policy', versionId: definition?.version?.versionId });
+if (definition?.showPolicy === 'if-not-accepted' && accepted) {
+  // nothing to show
+}
+
+const result = await Cdp.trackConsent({
+  consentId: 'privacy-policy',
+  versionId: definition?.version?.versionId ?? '1',
+  status: 'accepted',
+  metadata: { source: 'onboarding' },
+  email: 'user@example.com', // optional; hashed on the device
+});
+```
+
+`acceptMethod` is one of `check-box`, `pre-checked` or `form-submit` (show no box at
+all). `showPolicy` is `always` or `if-not-accepted`; pair the latter with `hasConsent`.
+A decision recorded before the device has a master id is remembered locally and replayed
+once one exists; `hasConsent` answers from that memory in the meantime. `trackConsent`
+and `getConsent` resolve `null` on failure; `hasConsent` resolves `false`.
 
 ## License
 

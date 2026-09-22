@@ -12,6 +12,7 @@ export {
   ExperienceType,
   ExperienceFamily,
   ExperienceContentType,
+  CdpIdentityTypes,
 } from './types';
 export type {
   CustomUserType,
@@ -27,6 +28,16 @@ export type {
   FetchExperiencesOptions,
   CdpData,
   CdpRfv,
+  CdpIdentityType,
+  CdpConsent,
+  CdpConsentStatus,
+  CdpConsentRef,
+  CdpConsentQuery,
+  CdpConsentAcceptMethod,
+  CdpConsentShowPolicy,
+  CdpConsentVersion,
+  CdpConsentDefinition,
+  CdpConsentRecordResponse,
   MeterState,
   MeterWindow,
 } from './types';

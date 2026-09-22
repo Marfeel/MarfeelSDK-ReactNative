@@ -149,6 +149,26 @@ class MarfeelSdk: NSObject {
         CompassTracker.shared.setConsent(hasConsent)
     }
 
+    @objc func resetUser(_ resolve: @escaping RCTPromiseResolveBlock, reject: @escaping RCTPromiseRejectBlock) {
+        CompassTracker.shared.resetUser { resolve(nil) }
+    }
+
+    @objc func getUserSegments(_ resolve: @escaping RCTPromiseResolveBlock, reject: @escaping RCTPromiseRejectBlock) {
+        resolve(CompassTracker.shared.getUserSegments())
+    }
+
+    @objc func getUserSegmentsAsync(_ resolve: @escaping RCTPromiseResolveBlock, reject: @escaping RCTPromiseRejectBlock) {
+        CompassTracker.shared.getUserSegments { resolve($0) }
+    }
+
+    @objc func getUserVars(_ resolve: @escaping RCTPromiseResolveBlock, reject: @escaping RCTPromiseRejectBlock) {
+        resolve(CompassTracker.shared.getUserVars())
+    }
+
+    @objc func getUserVarsAsync(_ resolve: @escaping RCTPromiseResolveBlock, reject: @escaping RCTPromiseRejectBlock) {
+        CompassTracker.shared.getUserVars { resolve($0) }
+    }
+
     @objc func initializeMultimediaItem(_ id: String, provider: String, providerId: String, type: String, metadata: String) {
         let mediaType: MarfeelSDK_iOS.`Type` = type == "audio" ? .AUDIO : .VIDEO
 
@@ -319,16 +339,72 @@ class MarfeelSdk: NSObject {
 
     // MARK: - CDP
 
-    @objc func cdpLinkIdentity(_ type: String, value: String, isDeterministic: Bool) {
-        Cdp.shared.cdpDoIdentityLink(type: type, value: value, isDeterministic: isDeterministic)
+    @objc func cdpSetIdentity(_ type: String, value: String, isDeterministic: Bool, resolver resolve: @escaping RCTPromiseResolveBlock, rejecter reject: @escaping RCTPromiseRejectBlock) {
+        guard !type.isEmpty, !value.isEmpty else {
+            reject("CDP_SET_IDENTITY_INVALID", "Cdp.setIdentity: type and value are required", nil)
+            return
+        }
+        Cdp.shared.setIdentity(type: type, value: value, isDeterministic: isDeterministic) { resolve(nil) }
     }
 
-    @objc func cdpGetData(_ resolve: @escaping RCTPromiseResolveBlock, reject: @escaping RCTPromiseRejectBlock) {
-        resolve(Self.serialize(Cdp.shared.getCdpData()))
+    @objc func cdpDeleteIdentity(_ type: String, value: String?, resolver resolve: @escaping RCTPromiseResolveBlock, rejecter reject: @escaping RCTPromiseRejectBlock) {
+        guard !type.isEmpty else {
+            reject("CDP_DELETE_IDENTITY_INVALID", "Cdp.deleteIdentity: type is required", nil)
+            return
+        }
+        Cdp.shared.deleteIdentity(type: type, value: value) { resolve(nil) }
+    }
+
+    @objc func cdpGetUserProfile(_ resolve: @escaping RCTPromiseResolveBlock, reject: @escaping RCTPromiseRejectBlock) {
+        resolve(Self.serialize(Cdp.shared.getUserProfile()))
     }
 
     @objc func cdpGetMasterId(_ resolve: @escaping RCTPromiseResolveBlock, reject: @escaping RCTPromiseRejectBlock) {
-        resolve(Cdp.shared.getCdpMasterId() ?? NSNull())
+        resolve(Cdp.shared.getMasterId() ?? NSNull())
+    }
+
+    @objc func cdpTrackConsent(_ decisionJson: String, resolver resolve: @escaping RCTPromiseResolveBlock, rejecter reject: @escaping RCTPromiseRejectBlock) {
+        guard let decision = Self.parseConsentDecision(decisionJson) else {
+            reject("CDP_TRACK_CONSENT", "invalid consent decision", nil)
+            return
+        }
+        Cdp.shared.trackConsent(decision) { result in
+            resolve(result.map { Self.serialize($0) } ?? NSNull())
+        }
+    }
+
+    @objc func cdpGetConsent(_ consentId: String, versionId: String?, resolver resolve: @escaping RCTPromiseResolveBlock, rejecter reject: @escaping RCTPromiseRejectBlock) {
+        Cdp.shared.getConsent(CdpConsentRef(consentId: consentId, versionId: versionId)) { definition in
+            resolve(definition.map { Self.serialize($0) } ?? NSNull())
+        }
+    }
+
+    @objc func cdpHasConsent(_ consentId: String, versionId: String?, email: String?, resolver resolve: @escaping RCTPromiseResolveBlock, rejecter reject: @escaping RCTPromiseRejectBlock) {
+        Cdp.shared.hasConsent(CdpConsentQuery(consentId: consentId, versionId: versionId, email: email)) { resolve($0) }
+    }
+
+    @objc func cdpListServerSegments(_ resolve: @escaping RCTPromiseResolveBlock, reject: @escaping RCTPromiseRejectBlock) {
+        resolve(Cdp.shared.listServerSegments())
+    }
+
+    @objc func cdpGetServerSegments(_ resolve: @escaping RCTPromiseResolveBlock, reject: @escaping RCTPromiseRejectBlock) {
+        Cdp.shared.getServerSegments { resolve($0) }
+    }
+
+    @objc func cdpListServerProperties(_ resolve: @escaping RCTPromiseResolveBlock, reject: @escaping RCTPromiseRejectBlock) {
+        resolve(Cdp.shared.listServerProperties())
+    }
+
+    @objc func cdpGetServerProperties(_ resolve: @escaping RCTPromiseResolveBlock, reject: @escaping RCTPromiseRejectBlock) {
+        Cdp.shared.getServerProperties { resolve($0) }
+    }
+
+    @objc func cdpHashEmail(_ email: String, resolver resolve: @escaping RCTPromiseResolveBlock, rejecter reject: @escaping RCTPromiseRejectBlock) {
+        resolve(Cdp.shared.hashEmail(email))
+    }
+
+    @objc func cdpHashPhone(_ phone: String, resolver resolve: @escaping RCTPromiseResolveBlock, rejecter reject: @escaping RCTPromiseRejectBlock) {
+        resolve(Cdp.shared.hashPhone(phone))
     }
 
     @objc func cdpAddSegment(_ segment: String) {
@@ -424,12 +500,73 @@ class MarfeelSdk: NSObject {
             "masterId": data.masterId ?? NSNull(),
             "rfv": rfvValue,
             "cohorts": data.cohorts,
+            "identityFresh": data.identityFresh,
         ]
         guard let json = try? JSONSerialization.data(withJSONObject: dict, options: []),
               let s = String(data: json, encoding: .utf8) else {
-            return "{\"masterId\":null,\"rfv\":null,\"cohorts\":[]}"
+            return "{\"masterId\":null,\"rfv\":null,\"cohorts\":[],\"identityFresh\":false}"
         }
         return s
+    }
+
+    private static func parseConsentDecision(_ json: String) -> CdpConsent? {
+        guard let data = json.data(using: .utf8),
+              let o = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any],
+              let consentId = o["consentId"] as? String,
+              let versionId = o["versionId"] as? String else { return nil }
+        let metadata = (o["metadata"] as? [String: Any]).map { raw -> [String: String] in
+            var out: [String: String] = [:]
+            for (key, value) in raw { out[key] = (value as? String) ?? String(describing: value) }
+            return out
+        }
+        return CdpConsent(
+            consentId: consentId,
+            versionId: versionId,
+            status: (o["status"] as? String) == "rejected" ? .rejected : .accepted,
+            metadata: metadata,
+            email: (o["email"] as? String).flatMap { $0.isEmpty ? nil : $0 }
+        )
+    }
+
+    private static func jsonString(_ object: Any, fallback: String) -> String {
+        guard let data = try? JSONSerialization.data(withJSONObject: object, options: []),
+              let s = String(data: data, encoding: .utf8) else { return fallback }
+        return s
+    }
+
+    private static func serialize(_ record: CdpConsentRecordResponse) -> String {
+        let dict: [String: Any] = [
+            "masterId": record.masterId.flatMap { $0.isEmpty ? nil : $0 } ?? NSNull(),
+            "consentId": record.consentId ?? NSNull(),
+            "consentVersionId": record.consentVersionId ?? NSNull(),
+            "status": record.status ?? NSNull(),
+            "recorded": record.recorded,
+            "stored": record.stored,
+        ]
+        return jsonString(dict, fallback: "{\"recorded\":false,\"stored\":false}")
+    }
+
+    private static func serialize(_ definition: CdpConsentDefinition) -> String {
+        let version: Any = definition.version.map { v -> [String: Any] in
+            [
+                "versionId": v.versionId,
+                "label": v.label,
+                "date": v.date ?? NSNull(),
+                "displayPrompt": v.displayPrompt ?? NSNull(),
+                "errorMessage": v.errorMessage ?? NSNull(),
+                "metadata": v.metadata,
+            ]
+        } ?? NSNull()
+        let dict: [String: Any] = [
+            "consentId": definition.consentId,
+            "name": definition.name,
+            "purpose": definition.purpose ?? NSNull(),
+            "mandatory": definition.mandatory,
+            "acceptMethod": definition.acceptMethod,
+            "showPolicy": definition.showPolicy.rawValue,
+            "version": version,
+        ]
+        return jsonString(dict, fallback: "{}")
     }
 
     private static func meterDict(_ meter: MeterState) -> [String: Any] {

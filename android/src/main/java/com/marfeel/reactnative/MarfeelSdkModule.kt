@@ -9,6 +9,12 @@ import com.facebook.react.bridge.ReadableMap
 import com.facebook.react.module.annotations.ReactModule
 import com.facebook.react.bridge.Arguments
 import com.marfeel.compass.cdp.Cdp
+import com.marfeel.compass.cdp.model.CdpConsent
+import com.marfeel.compass.cdp.model.CdpConsentDefinition
+import com.marfeel.compass.cdp.model.CdpConsentQuery
+import com.marfeel.compass.cdp.model.CdpConsentRecordResponse
+import com.marfeel.compass.cdp.model.CdpConsentRef
+import com.marfeel.compass.cdp.model.CdpConsentStatus
 import com.marfeel.compass.cdp.model.CdpData
 import com.marfeel.compass.cdp.model.MeterNotFoundError
 import com.marfeel.compass.cdp.model.MeterState
@@ -259,6 +265,57 @@ class MarfeelSdkModule(private val reactContext: ReactApplicationContext) :
     }
 
     @ReactMethod
+    fun resetUser(promise: Promise) {
+        mainHandler.post {
+            try {
+                CompassTracking.getInstance().resetUser { promise.resolve(null) }
+            } catch (e: Exception) {
+                promise.reject("RESET_USER", e.message, e)
+            }
+        }
+    }
+
+    @ReactMethod
+    fun getUserSegments(promise: Promise) {
+        try {
+            promise.resolve(toStringArray(CompassTracking.getInstance().getUserSegments()))
+        } catch (e: Exception) {
+            promise.reject("GET_USER_SEGMENTS", e.message, e)
+        }
+    }
+
+    @ReactMethod
+    fun getUserSegmentsAsync(promise: Promise) {
+        experiencesScope.launch {
+            try {
+                promise.resolve(toStringArray(CompassTracking.getInstance().getUserSegmentsAsync()))
+            } catch (e: Exception) {
+                promise.reject("GET_USER_SEGMENTS", e.message, e)
+            }
+        }
+    }
+
+    @ReactMethod
+    fun getUserVars(promise: Promise) {
+        try {
+            promise.resolve(toStringMap(CompassTracking.getInstance().getUserVars()))
+        } catch (e: Exception) {
+            promise.reject("GET_USER_VARS", e.message, e)
+        }
+    }
+
+    @ReactMethod
+    fun getUserVarsAsync(promise: Promise) {
+        experiencesScope.launch {
+            try {
+                promise.resolve(toStringMap(CompassTracking.getInstance().getUserVarsAsync()))
+            } catch (e: Exception) {
+                promise.reject("GET_USER_VARS", e.message, e)
+            }
+        }
+    }
+
+    @ReactMethod
     fun initializeMultimediaItem(
         id: String,
         provider: String,
@@ -479,25 +536,142 @@ class MarfeelSdkModule(private val reactContext: ReactApplicationContext) :
     // region CDP
 
     @ReactMethod
-    fun cdpLinkIdentity(type: String, value: String, isDeterministic: Boolean) {
-        Cdp.getInstance().cdpDoIdentityLink(type, value, isDeterministic)
+    fun cdpSetIdentity(type: String, value: String, isDeterministic: Boolean, promise: Promise) {
+        experiencesScope.launch {
+            try {
+                Cdp.getInstance().setIdentity(type, value, isDeterministic)
+                promise.resolve(null)
+            } catch (e: IllegalArgumentException) {
+                promise.reject("CDP_SET_IDENTITY_INVALID", e.message, e)
+            } catch (e: Exception) {
+                promise.reject("CDP_SET_IDENTITY", e.message, e)
+            }
+        }
     }
 
     @ReactMethod
-    fun cdpGetData(promise: Promise) {
+    fun cdpDeleteIdentity(type: String, value: String?, promise: Promise) {
+        experiencesScope.launch {
+            try {
+                Cdp.getInstance().deleteIdentity(type, value)
+                promise.resolve(null)
+            } catch (e: IllegalArgumentException) {
+                promise.reject("CDP_DELETE_IDENTITY_INVALID", e.message, e)
+            } catch (e: Exception) {
+                promise.reject("CDP_DELETE_IDENTITY", e.message, e)
+            }
+        }
+    }
+
+    @ReactMethod
+    fun cdpGetUserProfile(promise: Promise) {
         try {
-            promise.resolve(serializeCdpData(Cdp.getInstance().getCdpData()))
+            promise.resolve(serializeCdpData(Cdp.getInstance().getUserProfile()))
         } catch (e: Exception) {
-            promise.reject("CDP_GET_DATA", e.message, e)
+            promise.reject("CDP_GET_USER_PROFILE", e.message, e)
         }
     }
 
     @ReactMethod
     fun cdpGetMasterId(promise: Promise) {
         try {
-            promise.resolve(Cdp.getInstance().getCdpMasterId())
+            promise.resolve(Cdp.getInstance().getMasterId())
         } catch (e: Exception) {
             promise.reject("CDP_GET_MASTER_ID", e.message, e)
+        }
+    }
+
+    @ReactMethod
+    fun cdpTrackConsent(decisionJson: String, promise: Promise) {
+        experiencesScope.launch {
+            try {
+                val decision = parseConsentDecision(decisionJson)
+                val result = Cdp.getInstance().trackConsent(decision)
+                promise.resolve(result?.let { serializeConsentRecord(it) })
+            } catch (e: Exception) {
+                promise.reject("CDP_TRACK_CONSENT", e.message, e)
+            }
+        }
+    }
+
+    @ReactMethod
+    fun cdpGetConsent(consentId: String, versionId: String?, promise: Promise) {
+        experiencesScope.launch {
+            try {
+                val definition = Cdp.getInstance().getConsent(CdpConsentRef(consentId, versionId))
+                promise.resolve(definition?.let { serializeConsentDefinition(it) })
+            } catch (e: Exception) {
+                promise.reject("CDP_GET_CONSENT", e.message, e)
+            }
+        }
+    }
+
+    @ReactMethod
+    fun cdpHasConsent(consentId: String, versionId: String?, email: String?, promise: Promise) {
+        experiencesScope.launch {
+            try {
+                promise.resolve(Cdp.getInstance().hasConsent(CdpConsentQuery(consentId, versionId, email)))
+            } catch (e: Exception) {
+                promise.reject("CDP_HAS_CONSENT", e.message, e)
+            }
+        }
+    }
+
+    @ReactMethod
+    fun cdpListServerSegments(promise: Promise) {
+        try {
+            promise.resolve(toStringArray(Cdp.getInstance().listServerSegments()))
+        } catch (e: Exception) {
+            promise.reject("CDP_SERVER_SEGMENTS", e.message, e)
+        }
+    }
+
+    @ReactMethod
+    fun cdpGetServerSegments(promise: Promise) {
+        experiencesScope.launch {
+            try {
+                promise.resolve(toStringArray(Cdp.getInstance().getServerSegments()))
+            } catch (e: Exception) {
+                promise.reject("CDP_SERVER_SEGMENTS", e.message, e)
+            }
+        }
+    }
+
+    @ReactMethod
+    fun cdpListServerProperties(promise: Promise) {
+        try {
+            promise.resolve(toStringMap(Cdp.getInstance().listServerProperties()))
+        } catch (e: Exception) {
+            promise.reject("CDP_SERVER_PROPERTIES", e.message, e)
+        }
+    }
+
+    @ReactMethod
+    fun cdpGetServerProperties(promise: Promise) {
+        experiencesScope.launch {
+            try {
+                promise.resolve(toStringMap(Cdp.getInstance().getServerProperties()))
+            } catch (e: Exception) {
+                promise.reject("CDP_SERVER_PROPERTIES", e.message, e)
+            }
+        }
+    }
+
+    @ReactMethod
+    fun cdpHashEmail(email: String, promise: Promise) {
+        try {
+            promise.resolve(Cdp.getInstance().hashEmail(email))
+        } catch (e: Exception) {
+            promise.reject("CDP_HASH", e.message, e)
+        }
+    }
+
+    @ReactMethod
+    fun cdpHashPhone(phone: String, promise: Promise) {
+        try {
+            promise.resolve(Cdp.getInstance().hashPhone(phone))
+        } catch (e: Exception) {
+            promise.reject("CDP_HASH", e.message, e)
         }
     }
 
@@ -603,9 +777,64 @@ class MarfeelSdkModule(private val reactContext: ReactApplicationContext) :
         }
     }
 
+    private fun toStringArray(items: List<String>) = Arguments.createArray().apply { items.forEach { pushString(it) } }
+
+    private fun toStringMap(items: Map<String, String>) = Arguments.createMap().apply { items.forEach { (k, v) -> putString(k, v) } }
+
+    private fun parseConsentDecision(json: String): CdpConsent {
+        val o = JSONObject(json)
+        val metadata = o.optJSONObject("metadata")?.let { m ->
+            val map = mutableMapOf<String, String>()
+            m.keys().forEach { key -> map[key] = m.get(key).toString() }
+            map
+        }
+        return CdpConsent(
+            consentId = o.getString("consentId"),
+            versionId = o.getString("versionId"),
+            status = if (o.optString("status") == "rejected") CdpConsentStatus.REJECTED else CdpConsentStatus.ACCEPTED,
+            metadata = metadata,
+            email = if (o.isNull("email")) null else o.optString("email").ifEmpty { null }
+        )
+    }
+
+    private fun serializeConsentRecord(r: CdpConsentRecordResponse): String {
+        val o = JSONObject()
+        o.put("masterId", r.masterId?.ifEmpty { null } ?: JSONObject.NULL)
+        o.put("consentId", r.consentId ?: JSONObject.NULL)
+        o.put("consentVersionId", r.consentVersionId ?: JSONObject.NULL)
+        o.put("status", r.status ?: JSONObject.NULL)
+        o.put("recorded", r.recorded)
+        o.put("stored", r.stored)
+        return o.toString()
+    }
+
+    private fun serializeConsentDefinition(d: CdpConsentDefinition): String {
+        val o = JSONObject()
+        o.put("consentId", d.consentId)
+        o.put("name", d.name)
+        o.put("purpose", d.purpose ?: JSONObject.NULL)
+        o.put("mandatory", d.mandatory)
+        o.put("acceptMethod", d.acceptMethod)
+        o.put("showPolicy", d.showPolicy.wireValue)
+        o.put(
+            "version",
+            d.version?.let { v ->
+                JSONObject()
+                    .put("versionId", v.versionId)
+                    .put("label", v.label)
+                    .put("date", v.date ?: JSONObject.NULL)
+                    .put("displayPrompt", v.displayPrompt ?: JSONObject.NULL)
+                    .put("errorMessage", v.errorMessage ?: JSONObject.NULL)
+                    .put("metadata", JSONObject(v.metadata))
+            } ?: JSONObject.NULL
+        )
+        return o.toString()
+    }
+
     private fun serializeCdpData(data: CdpData): String {
         val o = JSONObject()
         o.put("masterId", data.masterId ?: JSONObject.NULL)
+        o.put("identityFresh", data.identityFresh)
         o.put(
             "rfv",
             data.rfv?.let {

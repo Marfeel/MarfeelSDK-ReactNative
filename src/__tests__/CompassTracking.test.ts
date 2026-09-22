@@ -88,6 +88,48 @@ describe('CompassTracking', () => {
     });
   });
 
+  describe('resetUser', () => {
+    it('resolves once native settles', async () => {
+      await expect(CompassTracking.resetUser()).resolves.toBeUndefined();
+      expect(mockNativeModule.resetUser).toHaveBeenCalledTimes(1);
+    });
+
+    it('never rejects, even when native does', async () => {
+      mockNativeModule.resetUser.mockRejectedValueOnce(new Error('boom'));
+      await expect(CompassTracking.resetUser()).resolves.toBeUndefined();
+    });
+
+    it('resetIdentity (deprecated) delegates to resetUser', async () => {
+      await CompassTracking.resetIdentity();
+      expect(mockNativeModule.resetUser).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('merged user data', () => {
+    it('getUserSegments / getUserSegmentsAsync resolve the native views', async () => {
+      mockNativeModule.getUserSegments.mockResolvedValueOnce(['srv', 'device']);
+      mockNativeModule.getUserSegmentsAsync.mockResolvedValueOnce(['srv2']);
+      await expect(CompassTracking.getUserSegments()).resolves.toEqual([
+        'srv',
+        'device',
+      ]);
+      await expect(CompassTracking.getUserSegmentsAsync()).resolves.toEqual([
+        'srv2',
+      ]);
+    });
+
+    it('getUserVars / getUserVarsAsync resolve the native views', async () => {
+      mockNativeModule.getUserVars.mockResolvedValueOnce({ plan: 'premium' });
+      mockNativeModule.getUserVarsAsync.mockResolvedValueOnce({ role: 'editor' });
+      await expect(CompassTracking.getUserVars()).resolves.toEqual({
+        plan: 'premium',
+      });
+      await expect(CompassTracking.getUserVarsAsync()).resolves.toEqual({
+        role: 'editor',
+      });
+    });
+  });
+
   describe('trackConversion', () => {
     it('calls with conversion only', () => {
       CompassTracking.trackConversion('signup');
