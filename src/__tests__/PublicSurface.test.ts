@@ -34,7 +34,6 @@ const cdpNames = [
 
 const trackingNames = [
   'resetUser',
-  'resetIdentity',
   'getUserSegments',
   'getUserSegmentsAsync',
   'getUserVars',

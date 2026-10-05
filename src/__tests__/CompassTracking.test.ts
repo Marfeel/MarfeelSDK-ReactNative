@@ -98,11 +98,6 @@ describe('CompassTracking', () => {
       mockNativeModule.resetUser.mockRejectedValueOnce(new Error('boom'));
       await expect(CompassTracking.resetUser()).resolves.toBeUndefined();
     });
-
-    it('resetIdentity (deprecated) delegates to resetUser', async () => {
-      await CompassTracking.resetIdentity();
-      expect(mockNativeModule.resetUser).toHaveBeenCalledTimes(1);
-    });
   });
 
   describe('merged user data', () => {

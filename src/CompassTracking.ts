@@ -127,11 +127,6 @@ export const CompassTracking = {
     return NativeMarfeelSdk.resetUser().catch(() => undefined);
   },
 
-  /** @deprecated Use `resetUser`. */
-  resetIdentity(): Promise<void> {
-    return CompassTracking.resetUser();
-  },
-
   /**
    * The user segments as a beacon sends them (`useg`): the device-owned segments unioned
    * with the Server Segments the CDP asserts, server first, deduplicated and capped at
