@@ -113,4 +113,44 @@ export const CompassTracking = {
   setConsent(hasConsent: boolean): void {
     NativeMarfeelSdk.setConsent(hasConsent);
   },
+
+  /**
+   * Turns this device into a new visitor. Call it on sign-out. The native SDK drops the
+   * site user id, mints a new user id, first visit and session, empties user vars and
+   * segments and wipes the local CDP state before the returned promise is created; the
+   * promise settles once the best-effort remote CDP reset finishes (bounded to five
+   * seconds). It never rejects and never re-resolves identity: the next `trackNewPage`
+   * does. The current page keeps its page id, so a sign-out that stays on screen should
+   * be followed by a new `trackNewPage` / `trackScreen`.
+   */
+  resetUser(): Promise<void> {
+    return NativeMarfeelSdk.resetUser().catch(() => undefined);
+  },
+
+  /**
+   * The user segments as a beacon sends them (`useg`): the device-owned segments unioned
+   * with the Server Segments the CDP asserts, server first, deduplicated and capped at
+   * 100. Reads whatever Server Segments are known right now.
+   */
+  getUserSegments(): Promise<string[]> {
+    return NativeMarfeelSdk.getUserSegments();
+  },
+
+  /** `getUserSegments` after resolving identity, so the Server Segments are current. */
+  getUserSegmentsAsync(): Promise<string[]> {
+    return NativeMarfeelSdk.getUserSegmentsAsync();
+  },
+
+  /**
+   * The user vars as a beacon sends them (`uvar`): the device-owned vars followed by the
+   * Server Properties the CDP computed for this user (device-owned wins on a collision).
+   */
+  getUserVars(): Promise<Record<string, string>> {
+    return NativeMarfeelSdk.getUserVars();
+  },
+
+  /** `getUserVars` after resolving identity, so the Server Properties are current. */
+  getUserVarsAsync(): Promise<Record<string, string>> {
+    return NativeMarfeelSdk.getUserVarsAsync();
+  },
 };

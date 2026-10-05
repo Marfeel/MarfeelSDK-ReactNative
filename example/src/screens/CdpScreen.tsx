@@ -8,7 +8,12 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { Cdp, type MeterState } from '@marfeel/react-native-sdk';
+import {
+  Cdp,
+  CdpIdentityTypes,
+  CompassTracking,
+  type MeterState,
+} from '@marfeel/react-native-sdk';
 
 export function CdpScreen() {
   const [idType, setIdType] = useState('registered_user_id');
@@ -19,6 +24,9 @@ export function CdpScreen() {
   const [segmentsCsv, setSegmentsCsv] = useState('sports_fan,newsletter');
 
   const [meterName, setMeterName] = useState('paywall');
+  const [consentId, setConsentId] = useState('privacy-policy');
+  const [consentVersion, setConsentVersion] = useState('');
+  const [consentEmail, setConsentEmail] = useState('');
 
   const [log, setLog] = useState<string[]>([]);
 
@@ -28,19 +36,87 @@ export function CdpScreen() {
     );
   }, []);
 
-  const onLinkIdentity = () => {
+  const onSetIdentity = async () => {
     if (!idValue) return;
-    Cdp.linkIdentity(idType, idValue, isDeterministic);
-    appendLog(`linkIdentity ${idType}=${idValue} (deterministic=${isDeterministic})`);
+    try {
+      await Cdp.setIdentity(idType, idValue, isDeterministic);
+      appendLog(`setIdentity ${idType}=${idValue} (deterministic=${isDeterministic}) → done`);
+    } catch (e) {
+      appendLog(`setIdentity ERROR ${(e as Error).message}`);
+    }
   };
 
-  const onGetData = async () => {
+  const onSetHashedEmail = async () => {
+    if (!idValue) return;
     try {
-      const data = await Cdp.getData();
-      appendLog(`getData → ${JSON.stringify(data)}`);
+      const hashed = await Cdp.hashEmail(idValue);
+      await Cdp.setIdentity(CdpIdentityTypes.EMAIL_SHA256, hashed, true);
+      appendLog(`setIdentity email_sha256=${hashed.slice(0, 12)}… → done`);
     } catch (e) {
-      appendLog(`getData ERROR ${(e as Error).message}`);
+      appendLog(`setIdentity ERROR ${(e as Error).message}`);
     }
+  };
+
+  const onDeleteIdentity = async () => {
+    try {
+      await Cdp.deleteIdentity(idType, idValue || undefined);
+      appendLog(`deleteIdentity ${idType}${idValue ? `=${idValue}` : ' (all)'} → done`);
+    } catch (e) {
+      appendLog(`deleteIdentity ERROR ${(e as Error).message}`);
+    }
+  };
+
+  const onResetUser = async () => {
+    await CompassTracking.resetUser();
+    appendLog('resetUser → done (master-less until the next page)');
+  };
+
+  const onGetUserProfile = async () => {
+    try {
+      const data = await Cdp.getUserProfile();
+      appendLog(`getUserProfile → ${JSON.stringify(data)}`);
+    } catch (e) {
+      appendLog(`getUserProfile ERROR ${(e as Error).message}`);
+    }
+  };
+
+  const onGetServerData = async () => {
+    try {
+      const segments = await Cdp.listServerSegments();
+      const properties = await Cdp.listServerProperties();
+      const useg = await CompassTracking.getUserSegments();
+      appendLog(`server segments [${segments.join(', ')}] props ${JSON.stringify(properties)} useg [${useg.join(', ')}]`);
+    } catch (e) {
+      appendLog(`server data ERROR ${(e as Error).message}`);
+    }
+  };
+
+  const onGetConsent = async () => {
+    const definition = await Cdp.getConsent({
+      consentId,
+      versionId: consentVersion || undefined,
+    });
+    appendLog(definition ? `getConsent → ${JSON.stringify(definition)}` : 'getConsent → null');
+  };
+
+  const onHasConsent = async () => {
+    const granted = await Cdp.hasConsent({
+      consentId,
+      versionId: consentVersion || undefined,
+      email: consentEmail || undefined,
+    });
+    appendLog(`hasConsent ${consentId} → ${granted}`);
+  };
+
+  const onTrackConsent = async (status: 'accepted' | 'rejected') => {
+    const result = await Cdp.trackConsent({
+      consentId,
+      versionId: consentVersion || '1',
+      status,
+      metadata: { source: 'example-app' },
+      email: consentEmail || undefined,
+    });
+    appendLog(result ? `trackConsent ${status} → ${JSON.stringify(result)}` : `trackConsent ${status} → null`);
   };
 
   const onGetMasterId = async () => {
@@ -170,17 +246,71 @@ export function CdpScreen() {
         <Text style={styles.label}>Deterministic</Text>
         <Switch value={isDeterministic} onValueChange={setIsDeterministic} />
       </View>
-      <Pressable style={styles.button} onPress={onLinkIdentity}>
-        <Text style={styles.buttonText}>Link Identity</Text>
+      <View style={styles.rowWrap}>
+        <Pressable style={styles.smallButton} onPress={onSetIdentity}>
+          <Text style={styles.buttonText}>setIdentity</Text>
+        </Pressable>
+        <Pressable style={styles.smallButton} onPress={onSetHashedEmail}>
+          <Text style={styles.buttonText}>hash + set email_sha256</Text>
+        </Pressable>
+        <Pressable style={styles.smallButton} onPress={onDeleteIdentity}>
+          <Text style={styles.buttonText}>deleteIdentity</Text>
+        </Pressable>
+      </View>
+      <Pressable style={styles.dangerButton} onPress={onResetUser}>
+        <Text style={styles.buttonText}>Reset user (sign-out)</Text>
       </Pressable>
 
       <Text style={styles.sectionTitle}>Identity Data</Text>
       <View style={styles.rowWrap}>
-        <Pressable style={styles.smallButton} onPress={onGetData}>
-          <Text style={styles.buttonText}>getData</Text>
+        <Pressable style={styles.smallButton} onPress={onGetUserProfile}>
+          <Text style={styles.buttonText}>getUserProfile</Text>
         </Pressable>
         <Pressable style={styles.smallButton} onPress={onGetMasterId}>
           <Text style={styles.buttonText}>getMasterId</Text>
+        </Pressable>
+        <Pressable style={styles.smallButton} onPress={onGetServerData}>
+          <Text style={styles.buttonText}>server segments / props</Text>
+        </Pressable>
+      </View>
+
+      <Text style={styles.sectionTitle}>Publisher consents</Text>
+      <View style={styles.row}>
+        <TextInput
+          style={styles.inputSmall}
+          value={consentId}
+          onChangeText={setConsentId}
+          placeholder="consent id"
+          autoCapitalize="none"
+        />
+        <TextInput
+          style={styles.inputSmall}
+          value={consentVersion}
+          onChangeText={setConsentVersion}
+          placeholder="version (optional)"
+          autoCapitalize="none"
+        />
+      </View>
+      <TextInput
+        style={styles.input}
+        value={consentEmail}
+        onChangeText={setConsentEmail}
+        placeholder="email (optional, hashed on device)"
+        autoCapitalize="none"
+        keyboardType="email-address"
+      />
+      <View style={styles.rowWrap}>
+        <Pressable style={styles.smallButton} onPress={onGetConsent}>
+          <Text style={styles.buttonText}>getConsent</Text>
+        </Pressable>
+        <Pressable style={styles.smallButton} onPress={onHasConsent}>
+          <Text style={styles.buttonText}>hasConsent</Text>
+        </Pressable>
+        <Pressable style={styles.smallButton} onPress={() => onTrackConsent('accepted')}>
+          <Text style={styles.buttonText}>accept</Text>
+        </Pressable>
+        <Pressable style={styles.smallButton} onPress={() => onTrackConsent('rejected')}>
+          <Text style={styles.buttonText}>reject</Text>
         </Pressable>
       </View>
 
@@ -288,6 +418,14 @@ const styles = StyleSheet.create({
   },
   button: {
     backgroundColor: '#007AFF',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  dangerButton: {
+    backgroundColor: '#C62828',
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderRadius: 8,
