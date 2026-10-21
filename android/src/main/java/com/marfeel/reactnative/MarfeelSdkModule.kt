@@ -147,7 +147,7 @@ class MarfeelSdkModule(private val reactContext: ReactApplicationContext) :
     fun setUserType(userType: Int) {
         runOnMainThread {
             val type = when (userType) {
-                1 -> UserType.Anonymous
+                0, 1 -> UserType.Anonymous
                 2 -> UserType.Logged
                 3 -> UserType.Paid
                 else -> UserType.Custom(userType)

@@ -60,7 +60,7 @@ describe('CompassTracking', () => {
   describe('setUserType', () => {
     it('handles UserType.Anonymous', () => {
       CompassTracking.setUserType(UserType.Anonymous);
-      expect(mockNativeModule.setUserType).toHaveBeenCalledWith(1);
+      expect(mockNativeModule.setUserType).toHaveBeenCalledWith(0);
     });
 
     it('handles UserType.Logged', () => {
