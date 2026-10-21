@@ -61,7 +61,7 @@ class MarfeelSdk: NSObject {
     @objc func setUserType(_ userType: Int) {
         let type: UserType
         switch userType {
-        case 1: type = .anonymous
+        case 0, 1: type = .anonymous
         case 2: type = .logged
         case 3: type = .paid
         default: type = .custom(userType)

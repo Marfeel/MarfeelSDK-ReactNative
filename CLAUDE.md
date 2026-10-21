@@ -42,6 +42,8 @@ ios/ MarfeelSdk.swift + MarfeelSdk.m            ← iOS native module (Swift + O
   - All `@ReactMethod` calls must be dispatched to the main thread via `Handler(Looper.getMainLooper()).post {}` because the Compass SDK uses `LifecycleRegistry`
 - **iOS:** `MarfeelSDK-iOS ~> 2.18` via CocoaPods
 
+`UserType` crosses the bridge as its numeric value: `Anonymous = 0`, `Logged = 2`, `Paid = 3`, anything else is custom. Both bridges map `0` and `1` (the legacy anonymous value) to the native anonymous type, which the native SDKs send as `0`.
+
 The CDP surface (`src/Cdp.ts`) mirrors the native `Cdp` / `CdpTracking` namespaces and is **add-only**: `src/__tests__/PublicSurface.test.ts` pins every name. Old flat names (`linkIdentity`, `getData`) stay as deprecated delegates. Complex CDP payloads (consent decisions, definitions, user profile, meters) cross the bridge as JSON strings; simple collections cross as arrays/maps. `resetUser` never rejects (the TS wrapper swallows native failures) and the native SDKs never re-resolve identity inside it.
 
 To compile the native bridges against an **unpublished** native SDK build: Android — `./gradlew :compass:publishViewsReleasePublicationToMavenLocal` in the Android repo, then temporarily replace the `com.marfeel.compass:views` dependency in `android/build.gradle` with `implementation files("<~/.m2 path to views-x.y.z.aar>")` plus its POM dependencies, and run `./gradlew :marfeel_react-native-sdk:compileDebugKotlin` from `example/android`; iOS — temporarily add `pod 'MarfeelSDK-iOS', :path => '<local repo>'` to `example/ios/Podfile`, `pod install`, and build the `MarfeelExample` scheme. Revert every temporary edit afterwards.

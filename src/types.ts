@@ -1,5 +1,5 @@
 export enum UserType {
-  Anonymous = 1,
+  Anonymous = 0,
   Logged = 2,
   Paid = 3,
 }
