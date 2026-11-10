@@ -61,6 +61,12 @@ export function ExperiencesScreen() {
       });
       setExperiences(results);
       setResolvedById({});
+      results.forEach(({ id, experimentation }) => {
+        const ab = experimentation
+          ? `ab=${experimentation.isControl ? 'control' : 'test'} tv=${experimentation.name}`
+          : 'ab=none';
+        appendLog(`  ${id} ${ab}`);
+      });
       appendLog(`fetchExperiences → ${results.length} results`);
     } catch (e) {
       appendLog(`fetchExperiences ERROR ${(e as Error).message}`);
@@ -219,6 +225,12 @@ export function ExperiencesScreen() {
                 type: {exp.type} · family: {exp.family ?? '—'} · contentType:{' '}
                 {exp.contentType}
               </Text>
+              {exp.experimentation && (
+                <Text style={styles.expMeta}>
+                  experiment: {exp.experimentation.isControl ? 'control' : 'test'} · tv:{' '}
+                  {exp.experimentation.name}
+                </Text>
+              )}
               {exp.contentUrl && (
                 <Text style={styles.expMeta} numberOfLines={2}>
                   contentUrl: {exp.contentUrl}

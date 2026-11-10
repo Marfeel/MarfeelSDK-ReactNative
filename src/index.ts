@@ -22,6 +22,7 @@ export type {
   RFV,
   TrackingOptions,
   Experience,
+  Experimentation,
   ExperienceSelector,
   ExperienceFilter,
   RecirculationLink,

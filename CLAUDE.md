@@ -40,9 +40,11 @@ ios/ MarfeelSdk.swift + MarfeelSdk.m            ← iOS native module (Swift + O
 - **Android:** `com.marfeel.compass:views` (version pinned in `android/build.gradle`) from `https://repositories.mrf.io/nexus/repository/mvn-marfeel-public/`
   - Import model classes from `com.marfeel.compass.core.model.compass.*` and `com.marfeel.compass.core.model.multimedia.*`
   - All `@ReactMethod` calls must be dispatched to the main thread via `Handler(Looper.getMainLooper()).post {}` because the Compass SDK uses `LifecycleRegistry`
-- **iOS:** `MarfeelSDK-iOS ~> 2.18` via CocoaPods
+- **iOS:** `MarfeelSDK-iOS ~> 2.19` via CocoaPods
 
 `UserType` crosses the bridge as its numeric value: `Anonymous = 0`, `Logged = 2`, `Paid = 3`, anything else is custom. Both bridges map `0` and `1` (the legacy anonymous value) to the native anonymous type, which the native SDKs send as `0`.
+
+Experiments are evaluated by the native SDKs (Android ≥ 1.19.0, iOS ≥ 2.19.0). The control arm of an experiment is returned by `fetchExperiences` like any other experience, marked with `experimentation: { isControl: true, name }`; both bridges serialize that field and it is `null` outside an experiment. The bridges keep the native `Experience` objects in `experienceCache`, so `Experiences.track*` calls made from JS still send the test version (`tv`).
 
 The CDP surface (`src/Cdp.ts`) mirrors the native `Cdp` / `CdpTracking` namespaces and is **add-only**: `src/__tests__/PublicSurface.test.ts` pins every name. Old flat names (`linkIdentity`, `getData`) stay as deprecated delegates. Complex CDP payloads (consent decisions, definitions, user profile, meters) cross the bridge as JSON strings; simple collections cross as arrays/maps. `resetUser` never rejects (the TS wrapper swallows native failures) and the native SDKs never re-resolve identity inside it.
 
