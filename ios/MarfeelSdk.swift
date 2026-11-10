@@ -631,6 +631,10 @@ class MarfeelSdk: NSObject {
                 sels.map { ["selector": $0.selector, "strategy": $0.strategy] }
             } ?? NSNull()
 
+            let experimentationValue: Any = e.experimentation.map {
+                ["isControl": $0.isControl, "name": $0.name] as [String: Any]
+            } ?? NSNull()
+
             let filtersValue: Any = e.filters.map { fs in
                 fs.map { ["key": $0.key, "operator": $0.operator.key, "values": $0.values] as [String: Any] }
             } ?? NSNull()
@@ -649,6 +653,7 @@ class MarfeelSdk: NSObject {
                 "filters": filtersValue,
                 "rawJson": rawJsonValue,
                 "resolvedContent": resolvedContentValue,
+                "experimentation": experimentationValue,
             ]
         }
         guard let data = try? JSONSerialization.data(withJSONObject: array, options: []),

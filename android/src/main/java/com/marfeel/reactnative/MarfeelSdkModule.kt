@@ -921,6 +921,12 @@ class MarfeelSdkModule(private val reactContext: ReactApplicationContext) :
             )
             o.put("rawJson", JSONObject(e.rawJson))
             o.put("resolvedContent", e.resolvedContent ?: JSONObject.NULL)
+            o.put(
+                "experimentation",
+                e.experimentation?.let {
+                    JSONObject().put("isControl", it.isControl).put("name", it.name)
+                } ?: JSONObject.NULL
+            )
             arr.put(o)
         }
         return arr.toString()

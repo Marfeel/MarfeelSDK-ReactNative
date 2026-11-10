@@ -258,6 +258,11 @@ export interface RecirculationLink {
   position: number;
 }
 
+export interface Experimentation {
+  isControl: boolean;
+  name: string;
+}
+
 export interface Experience {
   id: string;
   name: string;
@@ -272,6 +277,7 @@ export interface Experience {
   filters: ExperienceFilter[] | null;
   rawJson: Record<string, unknown>;
   resolvedContent: string | null;
+  experimentation: Experimentation | null;
 }
 
 export interface FetchExperiencesOptions {

@@ -8,10 +8,10 @@ PODS:
   - hermes-engine (0.14.0):
     - hermes-engine/Pre-built (= 0.14.0)
   - hermes-engine/Pre-built (0.14.0)
-  - marfeel-react-native-sdk (0.2.3):
-    - MarfeelSDK-iOS (~> 2.18.17)
+  - marfeel-react-native-sdk (0.2.4):
+    - MarfeelSDK-iOS (~> 2.19.0)
     - React-Core
-  - MarfeelSDK-iOS (2.18.17)
+  - MarfeelSDK-iOS (2.19.0)
   - RCT-Folly (2024.11.18.00):
     - boost
     - DoubleConversion
@@ -2862,8 +2862,8 @@ SPEC CHECKSUMS:
   fmt: a40bb5bd0294ea969aaaba240a927bd33d878cdd
   glog: 5683914934d5b6e4240e497e0f4a3b42d1854183
   hermes-engine: 8ca0f5bca0202e6202c5a04ff405926c7b007450
-  marfeel-react-native-sdk: 72288bf94721fb7c545f890c38b6f757e302a95b
-  MarfeelSDK-iOS: da9ac840586e298d7ff849b94e2ef9548e3142fc
+  marfeel-react-native-sdk: 3808c129f88aa6e7d75f43918da1f69ffdb482a0
+  MarfeelSDK-iOS: 29857b3512a7ed25412ec75703440d7e8a738c29
   RCT-Folly: 846fda9475e61ec7bcbf8a3fe81edfcaeb090669
   RCTDeprecation: a41bbdd9af30bf2e5715796b313e44ec43eefff1
   RCTRequired: 7be34aabb0b77c3cefe644528df0fa0afad4e4d0

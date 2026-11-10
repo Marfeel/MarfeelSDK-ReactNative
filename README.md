@@ -250,6 +250,29 @@ A decision recorded before the device has a master id is remembered locally and 
 once one exists; `hasConsent` answers from that memory in the meantime. `trackConsent`
 and `getConsent` resolve `null` on failure; `hasConsent` resolves `false`.
 
+### Experiences and experiments
+
+`Experiences.fetchExperiences()` returns the experiences that apply to the current page. Experiments are evaluated on the device: losing variants are dropped, and each returned experience says whether it belongs to an experiment through `experimentation`.
+
+```typescript
+import { Experiences } from '@marfeel/react-native-sdk';
+
+const experiences = await Experiences.fetchExperiences();
+
+experiences.forEach((experience) => {
+  if (experience.experimentation?.isControl) {
+    // Control arm: keep your own module instead of rendering the experience.
+    renderOwnModule();
+  } else {
+    renderExperience(experience);
+  }
+  // Track both arms so the experiment can compare them.
+  Experiences.trackEligible(experience, links);
+});
+```
+
+`experimentation` is `null` when the experience is not part of an experiment. Otherwise it is `{ isControl, name }`, where `name` is the test version sent with the tracking events. Since 0.2.4 the control arm is included in the list, so check `isControl` before rendering.
+
 ## License
 
 MIT

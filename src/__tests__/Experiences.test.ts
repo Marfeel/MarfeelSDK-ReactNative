@@ -24,6 +24,7 @@ const fixtureExperience: Experience = {
   filters: [{ key: 'mrf_exp_g1', operator: 'eq', values: ['v1'] }],
   rawJson: { id: 'IL_abc' },
   resolvedContent: null,
+  experimentation: null,
 };
 
 describe('Experiences', () => {
@@ -78,6 +79,33 @@ describe('Experiences', () => {
       expect(result[0]?.id).toBe('IL_abc');
       expect(result[0]?.type).toBe(ExperienceType.Inline);
       expect(result[0]?.family).toBe(ExperienceFamily.Recommender);
+      expect(result[0]?.experimentation).toBeNull();
+    });
+
+    it('keeps the experimentation of control and test experiences', async () => {
+      mockNativeModule.experiencesFetch.mockResolvedValueOnce(
+        JSON.stringify([
+          {
+            ...fixtureExperience,
+            id: 'IL_control',
+            experimentation: { isControl: true, name: 'control' },
+          },
+          {
+            ...fixtureExperience,
+            id: 'IL_variant',
+            experimentation: { isControl: false, name: 'variant-b' },
+          },
+        ])
+      );
+      const result = await Experiences.fetchExperiences();
+      expect(result[0]?.experimentation).toEqual({
+        isControl: true,
+        name: 'control',
+      });
+      expect(result[1]?.experimentation).toEqual({
+        isControl: false,
+        name: 'variant-b',
+      });
     });
 
     it('returns an empty array when native returns an empty string', async () => {
